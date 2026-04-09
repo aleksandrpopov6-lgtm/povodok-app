@@ -1,0 +1,4 @@
+node_modules/
+lapki.db
+uploads/
+.env

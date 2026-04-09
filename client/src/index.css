@@ -1,0 +1,385 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ══════════════════════════════════════════════════
+   ЗАДЕЛО — Tinder-style dark design system
+   ══════════════════════════════════════════════════ */
+
+@layer base {
+  :root {
+    /* Dark Tinder palette — deep charcoal surfaces, hot coral/pink gradient accent */
+    --background: 220 14% 8%;
+    --foreground: 0 0% 95%;
+    --card: 220 13% 12%;
+    --card-foreground: 0 0% 95%;
+    --popover: 220 13% 12%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 352 85% 60%;           /* hot coral — #F0485C */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 12% 17%;
+    --secondary-foreground: 0 0% 80%;
+    --muted: 220 10% 16%;
+    --muted-foreground: 0 0% 48%;
+    --accent: 33 95% 55%;             /* gold/amber for pro badge */
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 10% 20%;
+    --input: 220 10% 18%;
+    --ring: 352 85% 60%;
+    --radius: 1rem;
+    /* extra tokens */
+    --pink: 328 80% 62%;      /* #EE5FA2 */
+    --teal: 174 70% 42%;
+    --green: 142 60% 42%;
+  }
+  /* Light mode — warm white surfaces */
+  .light {
+    --background: 28 25% 97%;
+    --foreground: 220 18% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 18% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 18% 12%;
+    --primary: 352 85% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 28 20% 93%;
+    --secondary-foreground: 220 15% 20%;
+    --muted: 28 18% 93%;
+    --muted-foreground: 220 8% 44%;
+    --accent: 33 95% 50%;
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 10% 87%;
+    --input: 220 10% 90%;
+    --ring: 352 85% 55%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; box-sizing: border-box; margin: 0; padding: 0; }
+  html { overscroll-behavior: none; }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Nunito', 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100dvh;
+    line-height: 1.55;
+    overscroll-behavior: none;
+  }
+  h1,h2,h3,h4 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  img { display: block; max-width: 100%; }
+}
+
+/* ── Gradient accent (Tinder-style pink→coral) ── */
+.gradient-primary {
+  background: linear-gradient(135deg, hsl(var(--pink)) 0%, hsl(var(--primary)) 100%);
+}
+.gradient-primary-text {
+  background: linear-gradient(135deg, hsl(var(--pink)), hsl(var(--primary)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gradient-gold {
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+}
+
+/* ── Bottom nav ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  max-width: 480px; margin: 0 auto;
+  background: hsl(220 14% 10% / 0.97);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid hsl(220 10% 20%);
+  display: flex; justify-content: space-around;
+  padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom));
+  z-index: 100;
+}
+.nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 0.18rem;
+  padding: 0.35rem 1rem; border-radius: 0.6rem;
+  color: hsl(0 0% 40%); font-size: 0.62rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  cursor: pointer; text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+.nav-item.active { color: hsl(var(--primary)); }
+.nav-item:hover { color: hsl(var(--primary) / 0.8); }
+
+/* ── Page ── */
+.page { padding-bottom: 5rem; min-height: 100vh; max-width: 480px; margin: 0 auto; }
+
+/* ── Tinder-style swipe card ── */
+.swipe-deck {
+  position: relative; width: 100%; height: 100%;
+}
+
+/* Stamp overlays */
+.stamp {
+  position: absolute; z-index: 20; pointer-events: none;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 900; font-size: 2.2rem; letter-spacing: 0.04em;
+  text-transform: uppercase; padding: 0.3rem 1rem; border-radius: 0.5rem; border-width: 4px;
+  opacity: 0; transition: opacity 0.08s;
+}
+.stamp-like { top: 12%; left: 6%; transform: rotate(-15deg); border-style: solid; border-color: #22c55e; color: #22c55e; }
+.stamp-nope { top: 12%; right: 6%; transform: rotate(15deg); border-style: solid; border-color: hsl(var(--primary)); color: hsl(var(--primary)); }
+.stamp-super { top: 35%; left: 50%; transform: translateX(-50%) rotate(-5deg); border-style: solid; border-color: hsl(var(--teal)); color: hsl(var(--teal)); }
+
+/* Card gradient overlay */
+.card-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+  border-radius: 0 0 1.25rem 1.25rem;
+  padding: 4rem 1.25rem 1.25rem;
+  color: white;
+}
+
+/* ── Action buttons ── */
+.action-btn {
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 9999px; cursor: pointer; border: none;
+  transition: transform 0.14s cubic-bezier(0.16,1,0.3,1), box-shadow 0.14s, opacity 0.14s;
+}
+.action-btn:active { transform: scale(0.88) !important; opacity: 0.85; }
+.btn-skip {
+  width: 58px; height: 58px;
+  background: hsl(220 12% 17%);
+  border: 2px solid hsl(220 10% 25%);
+  color: hsl(0 70% 60%);
+}
+.btn-skip:hover { border-color: hsl(0 70% 55%); transform: scale(1.06); }
+.btn-like {
+  width: 74px; height: 74px;
+  background: linear-gradient(135deg, hsl(var(--pink)), hsl(var(--primary)));
+  color: white;
+  box-shadow: 0 8px 30px hsl(var(--primary) / 0.5);
+}
+.btn-like:hover { box-shadow: 0 10px 36px hsl(var(--primary) / 0.65); transform: scale(1.08); }
+.btn-info {
+  width: 46px; height: 46px;
+  background: hsl(220 12% 17%);
+  border: 2px solid hsl(220 10% 25%);
+  color: hsl(var(--teal));
+}
+.btn-info:hover { border-color: hsl(var(--teal)); transform: scale(1.06); }
+
+/* ── Pro badge ── */
+.pro-badge {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  color: white; font-size: 0.65rem; font-weight: 900;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 0.2rem 0.55rem; border-radius: 9999px;
+}
+
+/* ── Service card (ловцы, клиники, передержки) ── */
+.service-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 1.25rem;
+  overflow: hidden;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+}
+.service-card:hover {
+  border-color: hsl(var(--primary) / 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px hsl(0 0% 0% / 0.35);
+}
+
+/* ── Section tabs ── */
+.tab-bar {
+  display: flex; gap: 0.5rem; overflow-x: auto;
+  scrollbar-width: none; padding: 0 1rem 0.75rem;
+}
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab-pill {
+  white-space: nowrap; padding: 0.45rem 1.1rem;
+  border-radius: 9999px; font-size: 0.8rem; font-weight: 800;
+  cursor: pointer; border: 1.5px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground)); background: hsl(var(--card));
+  transition: all 0.15s; letter-spacing: 0.02em;
+}
+.tab-pill.active {
+  background: linear-gradient(135deg, hsl(var(--pink)), hsl(var(--primary)));
+  border-color: transparent; color: white;
+  box-shadow: 0 4px 16px hsl(var(--primary) / 0.4);
+}
+.tab-pill:not(.active):hover {
+  border-color: hsl(var(--primary) / 0.5); color: hsl(var(--primary));
+}
+
+/* ── Filter chip ── */
+.filter-chip {
+  white-space: nowrap; padding: 0.35rem 0.85rem;
+  border-radius: 9999px; border: 1.5px solid hsl(var(--border));
+  background: hsl(var(--card)); color: hsl(var(--muted-foreground));
+  font-size: 0.75rem; font-weight: 700; cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-chip.active, .filter-chip:hover {
+  border-color: hsl(var(--primary)); color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+}
+.filter-chips { display: flex; gap: 0.4rem; overflow-x: auto; scrollbar-width: none; padding-bottom: 0.25rem; }
+.filter-chips::-webkit-scrollbar { display: none; }
+
+/* ── Tag / badge ── */
+.tag {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  padding: 0.22rem 0.65rem; border-radius: 9999px;
+  font-size: 0.7rem; font-weight: 800;
+}
+.tag-coral  { background: hsl(var(--primary) / 0.15); color: hsl(var(--primary)); }
+.tag-green  { background: hsl(142 60% 42% / 0.15); color: hsl(142 60% 52%); }
+.tag-teal   { background: hsl(var(--teal) / 0.15); color: hsl(var(--teal)); }
+.tag-amber  { background: hsl(38 92% 50% / 0.15); color: hsl(38 92% 58%); }
+.tag-purple { background: hsl(265 60% 58% / 0.15); color: hsl(265 60% 68%); }
+.tag-muted  { background: hsl(220 10% 20%); color: hsl(0 0% 55%); }
+
+/* ── Divider ── */
+.divider { border: none; border-top: 1px solid hsl(var(--border)); }
+
+/* ── Input glass style ── */
+.glass-input {
+  background: hsl(220 12% 14%);
+  border: 1.5px solid hsl(220 10% 22%);
+  border-radius: 0.75rem; color: hsl(var(--foreground));
+  padding: 0.75rem 1rem; font-size: 0.9rem; width: 100%;
+  transition: border-color 0.15s;
+}
+.glass-input:focus { outline: none; border-color: hsl(var(--primary)); }
+.glass-input::placeholder { color: hsl(0 0% 35%); }
+
+/* ── Volunteer ad card ── */
+.ad-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 1.25rem; overflow: hidden;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.ad-card:hover { border-color: hsl(var(--primary) / 0.45); transform: translateY(-2px); }
+
+/* Donation progress bar */
+.donation-bar { height: 6px; border-radius: 9999px; background: hsl(220 10% 20%); overflow: hidden; }
+.donation-fill { height: 100%; border-radius: 9999px; background: linear-gradient(90deg, hsl(var(--pink)), hsl(var(--primary))); transition: width 0.6s ease; }
+
+/* ── Bottom sheet / modal ── */
+.bottom-sheet {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: hsl(220 14% 11%);
+  border-top: 1px solid hsl(220 10% 22%);
+  border-radius: 1.5rem 1.5rem 0 0;
+  padding: 1.25rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
+  z-index: 200;
+}
+.sheet-handle { width: 40px; height: 4px; background: hsl(220 10% 28%); border-radius: 9999px; margin: 0 auto 1.25rem; }
+
+/* ── Help option ── */
+.help-option {
+  display: flex; align-items: center; gap: 0.8rem;
+  padding: 0.9rem 1rem; border-radius: 0.85rem;
+  border: 1.5px solid hsl(var(--border));
+  cursor: pointer; transition: all 0.15s;
+  background: hsl(220 12% 14%);
+}
+.help-option:hover, .help-option.selected { border-color: hsl(var(--primary)); background: hsl(var(--primary) / 0.08); }
+
+/* ── Role selector card ── */
+.role-card {
+  border: 2px solid hsl(var(--border)); border-radius: 1.25rem;
+  padding: 1.25rem; cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16,1,0.3,1);
+  background: hsl(220 12% 14%);
+}
+.role-card:hover { border-color: hsl(var(--primary) / 0.6); transform: translateY(-2px); }
+.role-card.selected {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.08);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
+}
+
+/* ── Subscription card ── */
+.plan-card {
+  border: 2px solid hsl(var(--border)); border-radius: 1.25rem;
+  padding: 1.25rem; cursor: pointer; position: relative;
+  transition: all 0.18s; background: hsl(220 12% 14%);
+}
+.plan-card.popular {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.07);
+}
+.plan-card:hover { transform: translateY(-2px); }
+
+/* ── Photo upload ── */
+.photo-upload-box {
+  border: 2px dashed hsl(var(--border)); border-radius: 1rem;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.6rem; cursor: pointer; overflow: hidden;
+  background: hsl(220 12% 14%);
+  transition: border-color 0.15s, background 0.15s;
+}
+.photo-upload-box:hover { border-color: hsl(var(--primary)); background: hsl(var(--primary) / 0.06); }
+
+/* ── Header ── */
+.app-header {
+  position: sticky; top: 0; z-index: 50;
+  background: hsl(220 14% 8% / 0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid hsl(220 10% 16%);
+  padding: 0.75rem 1rem 0.6rem;
+}
+
+/* ── Rating stars ── */
+.stars { display: inline-flex; gap: 0.1rem; }
+
+/* ── Empty state ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.float { animation: float 2.5s ease-in-out infinite; }
+
+/* ── Shimmer skeleton ── */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, hsl(220 10% 16%) 25%, hsl(220 10% 20%) 50%, hsl(220 10% 16%) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+
+/* ── Scrollbar ── */
+* { scrollbar-width: thin; scrollbar-color: hsl(220 10% 22%) transparent; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-thumb { background: hsl(220 10% 22%); border-radius: 2px; }
+
+/* ── Light mode overrides ── */
+.light .glass-input {
+  background: hsl(0 0% 97%);
+  border-color: hsl(220 10% 82%);
+  color: hsl(220 18% 12%);
+}
+.light .glass-input::placeholder { color: hsl(220 8% 60%); }
+.light .bottom-nav { background: hsl(0 0% 100% / 0.97); }
+.light .app-header { background: hsl(28 25% 97% / 0.95); }
+.light .service-card { background: hsl(0 0% 100%); }
+.light .help-option { background: hsl(0 0% 98%); }
+.light .role-card { background: hsl(0 0% 98%); }
+.light .plan-card { background: hsl(0 0% 98%); }
+.light .photo-upload-box { background: hsl(220 10% 95%); }
+.light .stamp-like { border-color: #16a34a; color: #16a34a; }
+.light .stamp-nope { border-color: hsl(352 85% 50%); color: hsl(352 85% 50%); }
+.light body { background: hsl(var(--background)); color: hsl(var(--foreground)); }
