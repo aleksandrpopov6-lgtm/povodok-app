@@ -13,6 +13,8 @@ const items = [
 
 export default function BottomNav() {
   const [loc] = useHashLocation();
+  // Treat empty hash as home
+  const activeLoc = loc === "" || loc === "#" ? "/" : loc;
 
   return (
     /* Обёртка — фиксированная, по центру */
@@ -37,7 +39,7 @@ export default function BottomNav() {
         border: "1px solid var(--nav-border, rgba(0,0,0,0.07))",
       }}>
         {items.map(({ href, icon: Icon, label }) => {
-          const active = loc === href;
+          const active = activeLoc === href;
           return (
             <Link
               key={href}

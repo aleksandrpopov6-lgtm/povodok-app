@@ -88,10 +88,12 @@ function VideoPlayer({ src }: { src: string }) {
 }
 
 /* ── Money help flow ──────────────────────────────────── */
-function MoneyHelpFlow({ onConfirm }: { onConfirm: () => void }) {
+function MoneyHelpFlow({ onConfirm, animalName }: { onConfirm: () => void; animalName: string }) {
   const { toast } = useToast();
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState("100");
   const [method, setMethod] = useState<PayMethod>(null);
+
+  const presets = [50, 100, 300, 500];
 
   const methods: { key: PayMethod; icon: React.ElementType; label: string }[] = [
     { key: "sbp",  icon: Smartphone,  label: "СБП" },
@@ -109,36 +111,61 @@ function MoneyHelpFlow({ onConfirm }: { onConfirm: () => void }) {
 
   return (
     <div className="bg-card rounded-xl p-4 border border-border mb-4 space-y-4">
-      <h3 className="font-bold text-sm text-foreground">Денежная помощь</h3>
+      {/* Title with animal name */}
+      <h3 className="font-bold text-base" style={{ color: "hsl(var(--foreground))" }}>
+        Помочь {animalName} ❤️
+      </h3>
 
-      {/* Amount */}
+      {/* Amount presets */}
       <div>
-        <Label className="text-xs font-semibold mb-1 block">Сумма</Label>
+        <Label className="text-xs font-semibold mb-2 block" style={{ color: "hsl(var(--muted-foreground))" }}>
+          Сумма доната (₽)
+        </Label>
         <Input
           type="number"
           min={1}
           placeholder="Сумма в рублях"
           value={amount}
           onChange={e => setAmount(e.target.value)}
-          className="mt-1"
+          className="mb-2"
           data-testid="input-donation-amount"
         />
+        <div className="flex gap-2">
+          {presets.map(p => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setAmount(String(p))}
+              className="flex-1 py-1.5 rounded-xl text-xs font-bold border-2 transition-all"
+              style={{
+                borderColor: amount === String(p) ? "hsl(var(--primary))" : "hsl(var(--border))",
+                background: amount === String(p) ? "hsl(var(--primary) / 0.1)" : "hsl(var(--card))",
+                color: amount === String(p) ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
+              }}
+            >
+              {p}₽
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Payment methods */}
       <div>
-        <Label className="text-xs font-semibold mb-2 block">Способ оплаты</Label>
+        <Label className="text-xs font-semibold mb-2 block" style={{ color: "hsl(var(--muted-foreground))" }}>
+          Способ оплаты
+        </Label>
         <div className="flex gap-2">
           {methods.map(({ key, icon: Icon, label }) => (
             <button
               key={key}
               type="button"
               onClick={() => setMethod(key)}
-              className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 transition-all text-xs font-bold ${
-                method === key
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-card text-muted-foreground"
-              }`}
+              className="flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 transition-all text-xs font-bold"
+              style={{
+                borderColor: method === key ? "hsl(var(--primary))" : "hsl(var(--border))",
+                background: method === key ? "hsl(var(--primary) / 0.1)" : "hsl(var(--card))",
+                color: method === key ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
+              }}
               data-testid={`btn-paymethod-${key}`}
             >
               <Icon size={18} />
@@ -148,18 +175,28 @@ function MoneyHelpFlow({ onConfirm }: { onConfirm: () => void }) {
         </div>
       </div>
 
-      {/* Requisites block */}
+      {/* Requisites — светлый фон в обеих темах */}
       {showRequisites && (
-        <div className="rounded-xl p-3 border border-border" style={{ background: "hsl(220 12% 10%)" }}>
+        <div
+          className="rounded-xl p-3 border border-border"
+          style={{
+            background: "hsl(var(--secondary))",
+          }}
+        >
           {method === "sbp" && (
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground mb-0.5">СБП — номер телефона</p>
-                <p className="font-mono text-white font-bold">+7 999 000 11 22</p>
+                <p className="text-xs mb-0.5" style={{ color: "hsl(var(--muted-foreground))" }}>
+                  СБП — номер телефона
+                </p>
+                <p className="font-mono font-bold text-base" style={{ color: "hsl(var(--foreground))" }}>
+                  +7 999 000 11 22
+                </p>
               </div>
               <button
                 onClick={() => copyToClipboard("+79990001122", "Номер")}
-                className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground"
+                className="p-2 rounded-lg transition-colors"
+                style={{ color: "hsl(var(--muted-foreground))" }}
                 data-testid="btn-copy-sbp"
               >
                 <Copy size={16} />
@@ -169,12 +206,17 @@ function MoneyHelpFlow({ onConfirm }: { onConfirm: () => void }) {
           {method === "card" && (
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground mb-0.5">Номер карты</p>
-                <p className="font-mono text-white font-bold">2200 7010 1234 5678</p>
+                <p className="text-xs mb-0.5" style={{ color: "hsl(var(--muted-foreground))" }}>
+                  Номер карты
+                </p>
+                <p className="font-mono font-bold text-base" style={{ color: "hsl(var(--foreground))" }}>
+                  2200 7010 1234 5678
+                </p>
               </div>
               <button
                 onClick={() => copyToClipboard("2200701012345678", "Номер карты")}
-                className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground"
+                className="p-2 rounded-lg transition-colors"
+                style={{ color: "hsl(var(--muted-foreground))" }}
                 data-testid="btn-copy-card"
               >
                 <Copy size={16} />
@@ -182,7 +224,7 @@ function MoneyHelpFlow({ onConfirm }: { onConfirm: () => void }) {
             </div>
           )}
           {method === "bank" && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm" style={{ color: "hsl(var(--muted-foreground))" }}>
               Функция онлайн-оплаты будет доступна в ближайшее время
             </p>
           )}
@@ -355,7 +397,7 @@ export default function AnimalPage() {
 
             {/* Money help flow — special UI */}
             {showForm && selectedHelp === "money" && (
-              <MoneyHelpFlow onConfirm={() => {
+              <MoneyHelpFlow animalName={animal.name} onConfirm={() => {
                 donationMutation.mutate({
                   animalId: Number(id),
                   donorName: "Аноним",

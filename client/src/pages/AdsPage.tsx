@@ -58,7 +58,7 @@ function Requisites({ ad }: { ad: VolunteerAd }) {
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="mt-2 p-3 rounded-xl space-y-1.5" style={{ background: "hsl(220 12% 10%)" }}>
+            <div className="mt-2 p-3 rounded-xl space-y-1.5" style={{ background: "hsl(var(--secondary))" }}>
               {ad.bankCard && (
                 <div className="text-xs">
                   <span className="text-muted-foreground">Карта: </span>
@@ -187,12 +187,12 @@ function DonationSheet({ ad, onClose }: { ad: VolunteerAd; onClose: () => void }
 
             {/* Requisites */}
             {method && (
-              <div className="rounded-xl p-3 border border-border" style={{ background: "hsl(220 12% 10%)" }}>
+              <div className="rounded-xl p-3 border border-border" style={{ background: "hsl(var(--secondary))" }}>
                 {method === "sbp" && (
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-muted-foreground mb-0.5">СБП — номер телефона</p>
-                      <p className="font-mono text-white font-bold">
+                      <p className="font-mono font-bold" style={{color:"hsl(var(--foreground))"}}>
                         {ad.sbpPhone || "+7 999 000 11 22"}
                       </p>
                     </div>
@@ -208,7 +208,7 @@ function DonationSheet({ ad, onClose }: { ad: VolunteerAd; onClose: () => void }
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-muted-foreground mb-0.5">Номер карты</p>
-                      <p className="font-mono text-white font-bold">
+                      <p className="font-mono font-bold" style={{color:"hsl(var(--foreground))"}}>
                         {ad.bankCard || "2200 7010 1234 5678"}
                       </p>
                     </div>
