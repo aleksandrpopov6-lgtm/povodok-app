@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Switch, Route, Router } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -5,6 +6,7 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider, UserProvider } from "./components/ThemeProvider";
 import BottomNav, { ThemeToggle } from "./components/BottomNav";
+import SplashScreen from "./components/SplashScreen";
 import HomePage from "./pages/HomePage";
 import AnimalPage from "./pages/AnimalPage";
 import CatchersPage from "./pages/CatchersPage";
@@ -14,11 +16,13 @@ import ProfilePage from "./pages/ProfilePage";
 import AuthPage from "./pages/AuthPage";
 
 export default function App() {
+  const [splashDone, setSplashDone] = useState(false);
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <UserProvider>
           <div className="min-h-screen bg-background">
+            {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
             {/* Global floating theme toggle — top right corner */}
             <div style={{ position: "fixed", top: "0.75rem", right: "0.75rem", zIndex: 999 }}>
               <ThemeToggle />

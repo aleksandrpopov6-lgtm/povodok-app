@@ -383,3 +383,76 @@
 .light .stamp-like { border-color: #16a34a; color: #16a34a; }
 .light .stamp-nope { border-color: hsl(352 85% 50%); color: hsl(352 85% 50%); }
 .light body { background: hsl(var(--background)); color: hsl(var(--foreground)); }
+
+/* ── Bottom nav CSS variables ── */
+:root, .dark {
+  --nav-bg: hsl(220 14% 12%);
+  --nav-border: hsl(220 10% 22%);
+  --nav-icon: hsl(0 0% 42%);
+}
+.light {
+  --nav-bg: white;
+  --nav-border: rgba(0,0,0,0.08);
+  --nav-icon: #888;
+}
+
+/* ── Light theme: fix invisible text & missing borders ── */
+.light {
+  /* Force foreground text colour everywhere */
+  color: hsl(220 18% 12%);
+}
+.light .service-card {
+  background: white;
+  border: 1.5px solid hsl(220 10% 87%) !important;
+}
+.light .service-card:hover {
+  border-color: hsl(var(--primary) / 0.4) !important;
+}
+.light .help-option {
+  background: white;
+  border: 1.5px solid hsl(220 10% 87%) !important;
+}
+.light .help-option:hover,
+.light .help-option.selected {
+  border-color: hsl(var(--primary)) !important;
+}
+.light .glass-input {
+  background: white !important;
+  border: 1.5px solid hsl(220 10% 82%) !important;
+  color: hsl(220 18% 12%) !important;
+}
+.light .bottom-sheet {
+  background: white;
+  border-top: 1.5px solid hsl(220 10% 87%);
+}
+.light .role-card {
+  background: white;
+  border: 2px solid hsl(220 10% 87%);
+  color: hsl(220 18% 12%);
+}
+.light .role-card.selected {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.06);
+}
+.light .plan-card {
+  background: white;
+  border: 2px solid hsl(220 10% 87%);
+}
+.light .plan-card.popular {
+  border-color: hsl(var(--primary));
+}
+.light .ad-card {
+  background: white;
+  border: 1.5px solid hsl(220 10% 87%) !important;
+}
+.light .tag-muted {
+  background: hsl(220 10% 92%);
+  color: hsl(220 10% 38%);
+}
+/* Skeleton in light mode */
+.light .skeleton {
+  background: linear-gradient(90deg, hsl(220 10% 92%) 25%, hsl(220 10% 96%) 50%, hsl(220 10% 92%) 75%);
+  background-size: 800px 100%;
+}
+/* Make sure scrollable containers scroll */
+.page { overflow-y: auto; -webkit-overflow-scrolling: touch; }
