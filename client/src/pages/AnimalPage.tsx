@@ -6,7 +6,8 @@ import {
   ArrowLeft, Heart, Home as HomeIcon, Stethoscope,
   UtensilsCrossed, Banknote, MapPin, CalendarDays,
   CheckCircle, Play, Pause, Volume2, VolumeX,
-  Smartphone, CreditCard, Building2, Copy, Navigation
+  Smartphone, CreditCard, Building2, Copy, Navigation,
+  Receipt, ImagePlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,6 +93,9 @@ function MoneyHelpFlow({ onConfirm, animalName }: { onConfirm: () => void; anima
   const { toast } = useToast();
   const [amount, setAmount] = useState("100");
   const [method, setMethod] = useState<PayMethod>(null);
+  const [confirmed, setConfirmed] = useState(false);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [receiptSent, setReceiptSent] = useState(false);
 
   const presets = [50, 100, 300, 500];
 
@@ -231,14 +235,93 @@ function MoneyHelpFlow({ onConfirm, animalName }: { onConfirm: () => void; anima
         </div>
       )}
 
-      <Button
-        type="button"
-        className="w-full gradient-primary text-white font-bold"
-        onClick={onConfirm}
-        data-testid="btn-money-confirm"
-      >
-        Спасибо за помощь!
-      </Button>
+      {!confirmed ? (
+        <Button
+          type="button"
+          className="w-full gradient-primary text-white font-bold"
+          onClick={() => { setConfirmed(true); onConfirm(); }}
+          data-testid="btn-money-confirm"
+        >
+          Спасибо за помощь!
+        </Button>
+      ) : (
+        <div className="space-y-3">
+          {/* Success message */}
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+            <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
+            <p className="text-sm font-semibold text-green-700 dark:text-green-400">
+              Спасибо! Ваш донат поможет {animalName}.
+            </p>
+          </div>
+
+          {/* Receipt upload */}
+          {!receiptSent ? (
+            <div className="rounded-xl border border-border p-3 space-y-2" style={{ background: "hsl(var(--card))" }}>
+              <p className="text-xs font-bold" style={{ color: "hsl(var(--muted-foreground))" }}>
+                Прикрепите чек для статистики (необязательно)
+              </p>
+              {receiptPreview ? (
+                <div className="relative">
+                  <img
+                    src={receiptPreview}
+                    alt="Чек"
+                    className="w-full max-h-40 object-contain rounded-lg border border-border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setReceiptPreview(null)}
+                    className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5"
+                  >
+                    <span className="text-xs px-1">✕</span>
+                  </button>
+                </div>
+              ) : (
+                <label className="flex items-center gap-2 cursor-pointer py-2.5 px-3 rounded-xl border-2 border-dashed transition-colors"
+                  style={{ borderColor: "hsl(var(--border))" }}>
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) setReceiptPreview(URL.createObjectURL(file));
+                    }}
+                  />
+                  <ImagePlus size={18} style={{ color: "hsl(var(--muted-foreground))" }} />
+                  <span className="text-xs font-semibold" style={{ color: "hsl(var(--muted-foreground))" }}>
+                    Фото или скрин чека
+                  </span>
+                </label>
+              )}
+              <Button
+                type="button"
+                className="w-full font-bold text-sm"
+                style={{
+                  background: receiptPreview ? "linear-gradient(135deg,#EE5FA2,#F0485C)" : "hsl(var(--secondary))",
+                  color: receiptPreview ? "white" : "hsl(var(--muted-foreground))",
+                }}
+                onClick={() => {
+                  if (receiptPreview) {
+                    toast({ title: "Чек отправлен!", description: "Спасибо — это помогает нам вести статистику." });
+                  }
+                  setReceiptSent(true);
+                }}
+                data-testid="btn-send-receipt"
+              >
+                <Receipt size={15} className="mr-1.5" />
+                {receiptPreview ? "Отправил — прикрепить чек" : "Отправил без чека"}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+              <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
+              <p className="text-xs font-semibold text-green-700 dark:text-green-400">
+                {receiptPreview ? "Чек получен, спасибо!" : "Отметили ваш донат, спасибо!"}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

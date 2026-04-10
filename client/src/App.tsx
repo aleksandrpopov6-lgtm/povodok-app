@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Switch, Route, Router } from "wouter";
+import { useState, useEffect } from "react";
+import { Switch, Route, Router, Redirect } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
@@ -18,10 +18,12 @@ import AuthPage from "./pages/AuthPage";
 export default function App() {
   const [splashDone, setSplashDone] = useState(false);
 
-  // Ensure we start on the home route
-  if (typeof window !== "undefined" && !window.location.hash) {
-    window.location.hash = "/";
-  }
+  // Ensure we start on the home route — runs once on mount only
+  useEffect(() => {
+    if (!window.location.hash || window.location.hash === "#" || window.location.hash === "") {
+      window.location.replace(window.location.pathname + window.location.search + "#/");
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -42,6 +44,8 @@ export default function App() {
                 <Route path="/ads" component={AdsPage} />
                 <Route path="/profile" component={ProfilePage} />
                 <Route path="/auth" component={AuthPage} />
+                {/* Fallback: any unmatched route → home */}
+                <Route><Redirect to="/" /></Route>
               </Switch>
               <BottomNav />
             </Router>

@@ -13,8 +13,12 @@ const items = [
 
 export default function BottomNav() {
   const [loc] = useHashLocation();
-  // Treat empty hash as home
-  const activeLoc = loc === "" || loc === "#" ? "/" : loc;
+  // Treat empty hash / bare # / missing hash as home
+  const raw = typeof window !== "undefined"
+    ? (window.location.hash.replace(/^#/, "") || "/")
+    : (loc || "/");
+  // Pick exact nav entry path (avoid /animal/1 highlighting nothing)
+  const activeLoc = raw === "" || raw === "#" ? "/" : raw;
 
   return (
     /* Обёртка — фиксированная, по центру */
