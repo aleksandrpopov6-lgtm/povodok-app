@@ -183,7 +183,7 @@ function BoardingDetail({ boarding, onBack }: { boarding: Boarding; onBack: () =
     `https://yandex.ru/maps/?text=${encodeURIComponent(boarding.address || boarding.name)}`;
 
   return (
-    <div className="page">
+    <div className="page" style={{overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
       {/* Header */}
       <div className="app-header flex items-center gap-3 pr-14">
         <button onClick={onBack} className="p-1.5 rounded-full hover:bg-white/10 transition-colors" data-testid="btn-back-detail">
@@ -380,7 +380,7 @@ function ClinicDetail({ clinic, onBack }: { clinic: Clinic; onBack: () => void }
     `https://yandex.ru/maps/?text=${encodeURIComponent((clinic as any).address || clinic.name)}`;
 
   return (
-    <div className="page">
+    <div className="page" style={{overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
       <div className="app-header flex items-center gap-3 pr-14">
         <button onClick={onBack} className="p-1.5 rounded-full hover:bg-white/10 transition-colors" data-testid="btn-back-clinic-detail">
           <ArrowLeft size={20} className="text-white" />
@@ -714,7 +714,7 @@ export default function ServicesPage() {
   }
 
   return (
-    <div className="page">
+    <div className="page" style={{overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
       {/* Header */}
       <div className="app-header pr-14">
         <h1 className="text-xl font-black text-white">Сервисы</h1>

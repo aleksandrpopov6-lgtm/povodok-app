@@ -17,6 +17,12 @@ import AuthPage from "./pages/AuthPage";
 
 export default function App() {
   const [splashDone, setSplashDone] = useState(false);
+
+  // Ensure we start on the home route
+  if (typeof window !== "undefined" && !window.location.hash) {
+    window.location.hash = "/";
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>

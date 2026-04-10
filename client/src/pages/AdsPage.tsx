@@ -119,7 +119,7 @@ function DonationSheet({ ad, onClose }: { ad: VolunteerAd; onClose: () => void }
       <div className="bottom-sheet" data-testid="donation-sheet">
         <div className="sheet-handle" />
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-extrabold text-lg text-white">Поддержать донатом</h3>
+          <h3 className="font-extrabold text-lg" style={{color:"hsl(var(--foreground))"}}>Поддержать донатом</h3>
           <button
             onClick={onClose}
             className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
@@ -240,7 +240,7 @@ function DonationSheet({ ad, onClose }: { ad: VolunteerAd; onClose: () => void }
         ) : (
           <div className="text-center py-6">
             <CheckCircle size={48} className="mx-auto mb-3 text-green-500" />
-            <p className="font-extrabold text-lg text-white mb-1">Спасибо за помощь!</p>
+            <p className="font-extrabold text-lg mb-1" style={{color:"hsl(var(--foreground))"}}>Спасибо за помощь!</p>
             <p className="text-sm text-muted-foreground mb-4">Ваш донат поможет питомцу.</p>
             <button
               onClick={onClose}
@@ -279,7 +279,7 @@ function AdCard({ ad }: { ad: VolunteerAd }) {
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start gap-2 mb-1">
-              <h3 className="font-extrabold text-white text-base leading-tight flex-1 min-w-0 truncate">
+              <h3 className="font-extrabold text-base leading-tight flex-1 min-w-0 truncate" style={{color:"hsl(var(--foreground))"}}>
                 {ad.title}
               </h3>
               <span
@@ -328,7 +328,7 @@ function AdCard({ ad }: { ad: VolunteerAd }) {
         <div className="flex gap-2 mt-3">
           <a
             href={`tel:${ad.authorPhone}`}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold border-2 border-border bg-card text-white transition-opacity hover:opacity-80"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold border-2 border-border bg-card transition-opacity hover:opacity-80" style={{color:"hsl(var(--foreground))"}}
             data-testid={`btn-contact-${ad.id}`}
           >
             Написать
@@ -427,12 +427,12 @@ function CreateAdForm({ onBack }: { onBack: () => void }) {
 
   if (!user || (user.role !== "volunteer" && user.role !== "admin")) {
     return (
-      <div className="page">
+      <div className="page" style={{overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
         <div className="app-header flex items-center gap-3 pr-14">
           <button onClick={onBack} className="p-1.5 rounded-full hover:bg-white/10" data-testid="btn-back-create">
             <ArrowLeft size={20} className="text-white" />
           </button>
-          <h1 className="text-xl font-black text-white">Создать объявление</h1>
+          <h1 className="text-xl font-black" style={{color:"hsl(var(--foreground))"}}>Создать объявление</h1>
         </div>
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
           <div className="text-5xl mb-4 float">🐾</div>
@@ -454,12 +454,12 @@ function CreateAdForm({ onBack }: { onBack: () => void }) {
 
   if (submitted) {
     return (
-      <div className="page">
+      <div className="page" style={{overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
         <div className="app-header flex items-center gap-3 pr-14">
           <button onClick={onBack} className="p-1.5 rounded-full hover:bg-white/10" data-testid="btn-back-success">
             <ArrowLeft size={20} className="text-white" />
           </button>
-          <h1 className="text-xl font-black text-white">Объявление создано</h1>
+          <h1 className="text-xl font-black" style={{color:"hsl(var(--foreground))"}}>Объявление создано</h1>
         </div>
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
           <CheckCircle size={64} className="text-green-500 mb-4" />
@@ -480,7 +480,7 @@ function CreateAdForm({ onBack }: { onBack: () => void }) {
   const hasDonation = form.adType === "treatment" || form.adType === "both";
 
   return (
-    <div className="page">
+    <div className="page" style={{overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
       <div className="app-header flex items-center gap-3 pr-14">
         <button
           onClick={onBack}
@@ -489,7 +489,7 @@ function CreateAdForm({ onBack }: { onBack: () => void }) {
         >
           <ArrowLeft size={20} className="text-white" />
         </button>
-        <h1 className="text-xl font-black text-white">Создать объявление</h1>
+        <h1 className="text-xl font-black" style={{color:"hsl(var(--foreground))"}}>Создать объявление</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="px-4 pt-4 space-y-4 pb-8">
@@ -676,11 +676,11 @@ export default function AdsPage() {
   }
 
   return (
-    <div className="page">
+    <div className="page" style={{overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
       {/* Header */}
       <div className="app-header pr-14">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-black text-white">Объявления волонтёров</h1>
+          <h1 className="text-xl font-black" style={{color:"hsl(var(--foreground))"}}>Объявления волонтёров</h1>
           <button
             onClick={() => setShowCreate(true)}
             className="gradient-primary text-white font-extrabold text-xs px-4 py-2 rounded-full flex items-center gap-1.5 transition-opacity hover:opacity-90"

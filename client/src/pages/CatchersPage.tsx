@@ -310,7 +310,7 @@ export default function CatchersPage() {
   });
 
   return (
-    <div className="page">
+    <div className="page" style={{overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
       {/* Header */}
       <div className="app-header pr-14">
         <h1 className="text-xl font-black" style={{color:"hsl(var(--foreground))"}}>Ловцы</h1>

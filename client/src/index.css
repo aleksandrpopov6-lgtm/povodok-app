@@ -60,14 +60,14 @@
 
 @layer base {
   * { @apply border-border; box-sizing: border-box; margin: 0; padding: 0; }
-  html { overscroll-behavior: none; }
+  html { overscroll-behavior-x: none; }
   body {
     @apply bg-background text-foreground;
     font-family: 'Nunito', 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
     min-height: 100dvh;
     line-height: 1.55;
-    overscroll-behavior: none;
+    overscroll-behavior-x: none; /* allow vertical scroll */
   }
   h1,h2,h3,h4 {
     font-family: 'Plus Jakarta Sans', sans-serif;
@@ -114,7 +114,8 @@
 .nav-item:hover { color: hsl(var(--primary) / 0.8); }
 
 /* ── Page ── */
-.page { padding-bottom: 5rem; min-height: 100vh; max-width: 480px; margin: 0 auto; }
+.page { padding-bottom: 7rem; min-height: 100vh; max-width: 480px; margin: 0 auto; }
+.page-content { padding-bottom: 7rem; min-height: 100vh; max-width: 480px; margin: 0 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
 /* ── Tinder-style swipe card ── */
 .swipe-deck {
@@ -455,4 +456,90 @@
   background-size: 800px 100%;
 }
 /* Make sure scrollable containers scroll */
-.page { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+
+/* ════════════════════════════════════════
+   LIGHT THEME — comprehensive text fixes
+   ════════════════════════════════════════ */
+
+/* Any element with text-white that is NOT inside a gradient button */
+.light .text-white:not(.gradient-primary):not([class*="gradient"]) {
+  color: hsl(220 18% 12%) !important;
+}
+
+/* Page headers / app-header area in light mode */
+.light .app-header h1,
+.light .app-header h2,
+.light .app-header span:not(.gradient-primary-text) {
+  color: hsl(220 18% 12%) !important;
+}
+
+/* Card titles */
+.light .ad-card h3,
+.light .service-card h3,
+.light .service-card h2 {
+  color: hsl(220 18% 12%) !important;
+}
+
+/* Role cards in auth page — title bold */
+.light .role-card strong,
+.light .role-card b,
+.light .role-card p:first-of-type {
+  color: hsl(220 18% 12%) !important;
+}
+
+/* Bottom sheet text */
+.light .bottom-sheet h3,
+.light .bottom-sheet p:not(.text-muted-foreground) {
+  color: hsl(220 18% 12%) !important;
+}
+
+/* "Написать" button — outline style should have dark text in light mode */
+.light button[class*="border-border"][class*="bg-card"] {
+  color: hsl(220 18% 12%) !important;
+  background: white !important;
+}
+
+/* Headers that use inline styles with white color */
+.light [style*="color: white"],
+.light [style*="color:white"] {
+  color: hsl(220 18% 12%) !important;
+}
+
+/* Keep white text on gradient backgrounds */
+.light .gradient-primary,
+.light [class*="gradient-primary"] {
+  color: white !important;
+}
+
+/* Force input placeholders visible */
+.light input::placeholder,
+.light textarea::placeholder {
+  color: hsl(220 10% 58%) !important;
+}
+
+/* Muted text should be visible */
+.light .text-muted-foreground {
+  color: hsl(220 10% 44%) !important;
+}
+
+/* Filter chips text */
+.light .filter-chip {
+  color: hsl(220 10% 40%) !important;
+  background: white !important;
+}
+.light .filter-chip.active {
+  color: hsl(var(--primary)) !important;
+  background: hsl(var(--primary) / 0.08) !important;
+}
+
+/* ── Ensure scrollability on all pages ── */
+html, body, #root {
+  height: 100%;
+  min-height: 100%;
+}
+.page, .page-content {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain;
+}

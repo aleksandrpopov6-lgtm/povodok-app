@@ -247,7 +247,7 @@ export default function AnimalPage() {
   };
 
   if (isLoading) return (
-    <div className="page-content max-w-lg mx-auto">
+    <div className="page-content max-w-lg mx-auto" style={{overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
       <Skeleton className="w-full aspect-[4/3]" />
       <div className="p-4 space-y-3"><Skeleton className="h-8 w-1/2" /><Skeleton className="h-4 w-full" /></div>
     </div>
@@ -257,7 +257,7 @@ export default function AnimalPage() {
   const hasVideo = Boolean(animal.videoUrl);
 
   return (
-    <div className="page-content max-w-lg mx-auto">
+    <div className="page-content max-w-lg mx-auto" style={{overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
       {/* Media area */}
       <div className="relative">
         {/* Tab switcher — only if video exists */}

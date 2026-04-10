@@ -63,7 +63,7 @@ function CatcherFields({ value, onChange }: {
 
       <div>
         <label className="text-xs font-semibold text-muted-foreground block mb-1">
-          Радиус выезда: <span className="text-white font-bold">{value.serviceRadiusKm || 5} км</span>
+          Радиус выезда: <span className="font-bold" style={{color:"hsl(var(--foreground))"}}>{value.serviceRadiusKm || 5} км</span>
         </label>
         <input
           type="range"
@@ -257,7 +257,7 @@ function ClinicFields({ value, onChange }: { value: any; onChange: (v: any) => v
             }`}
             data-testid="btn-sub-free"
           >
-            <p className="text-sm font-bold text-white">Бесплатно</p>
+            <p className="text-sm font-bold" style={{color:"hsl(var(--foreground))"}}>Бесплатно</p>
             <p className="text-xs text-muted-foreground">Базовое размещение</p>
           </div>
           <div
@@ -269,7 +269,7 @@ function ClinicFields({ value, onChange }: { value: any; onChange: (v: any) => v
             }`}
             data-testid="btn-sub-paid"
           >
-            <p className="text-sm font-bold text-white">Платное от 300₽/мес</p>
+            <p className="text-sm font-bold" style={{color:"hsl(var(--foreground))"}}>Платное от 300₽/мес</p>
             <p className="text-xs text-muted-foreground">Приоритет в поиске + расширенный профиль</p>
             {value.subscription === "paid" && (
               <input
@@ -404,7 +404,7 @@ function BoardingFields({ value, onChange }: { value: any; onChange: (v: any) =>
             }`}
             data-testid="btn-boarding-sub-free"
           >
-            <p className="text-sm font-bold text-white">Бесплатно</p>
+            <p className="text-sm font-bold" style={{color:"hsl(var(--foreground))"}}>Бесплатно</p>
             <p className="text-xs text-muted-foreground">Базовое размещение</p>
           </div>
           <div
@@ -416,7 +416,7 @@ function BoardingFields({ value, onChange }: { value: any; onChange: (v: any) =>
             }`}
             data-testid="btn-boarding-sub-paid"
           >
-            <p className="text-sm font-bold text-white">Платное от 300₽/мес</p>
+            <p className="text-sm font-bold" style={{color:"hsl(var(--foreground))"}}>Платное от 300₽/мес</p>
             <p className="text-xs text-muted-foreground">Приоритет в поиске + расширенный профиль</p>
             {value.subscription === "paid" && (
               <input
@@ -576,7 +576,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="page">
+    <div className="page" style={{overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
       {/* Back button */}
       <div className="app-header flex items-center gap-3">
         <button
@@ -672,7 +672,7 @@ export default function AuthPage() {
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{role.emoji}</span>
                         <div>
-                          <p className="font-extrabold text-sm text-white">{role.label}</p>
+                          <p className="font-extrabold text-sm" style={{color:"hsl(var(--foreground))"}}>{role.label}</p>
                           <p className="text-xs text-muted-foreground">{role.desc}</p>
                         </div>
                         {regRole === role.key && (
