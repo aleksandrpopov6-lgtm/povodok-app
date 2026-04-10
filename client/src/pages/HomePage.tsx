@@ -1,10 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useHashLocation } from "wouter/use-hash-location";
 import { Heart, MapPin, Cat, Dog, Video, UtensilsCrossed, Home as HomeIcon, Stethoscope, RefreshCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import CatPawLogo, { BrandName } from "@/components/CatPawLogo";
 import type { Animal } from "@shared/schema";
+import SavedGalleryModal from "@/components/SavedGalleryModal";
+
+/* ── Animated counter hook ──────────────────────────────────────── */
+function useCountUp(from: number, to: number, stepMs: number) {
+  const [value, setValue] = useState(from);
+  useEffect(() => {
+    let current = from;
+    setValue(from);
+    const id = setInterval(() => {
+      current += 1;
+      setValue(current);
+      if (current >= to) clearInterval(id);
+    }, stepMs);
+    return () => clearInterval(id);
+  }, [from, to, stepMs]);
+  return value;
+}
 
 /* ── Animal card — шахматная сетка ─────────────────────────── */
 function AnimalCard({ animal }: { animal: Animal }) {
@@ -137,12 +154,14 @@ function SkeletonCard() {
 /* ── Main page ────────────────────────────────────────────────── */
 export default function HomePage() {
   const [filter, setFilter] = useState<"all" | "cat" | "dog" | "needs_help">("all");
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const savedCount = useCountUp(10, 27, 80);
 
   const { data: allAnimals = [], isLoading } = useQuery<Animal[]>({
     queryKey: ["/api/animals"],
   });
 
-  const { data: stats } = useQuery<{ total: number; needsHelp: number; rehomed: number }>({
+  const { data: stats } = useQuery<{ total: number; needsHelp: number; rehomed: number; saved: number }>({
     queryKey: ["/api/stats"],
   });
 
@@ -155,6 +174,14 @@ export default function HomePage() {
 
   return (
     <div className="page" style={{ paddingBottom: "6rem" }}>
+      {/* Keyframe для пульсации рамки */}
+      <style>{`
+        @keyframes savedPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(240,72,92,0.35); border-color: #F0485C; }
+          50% { box-shadow: 0 0 0 5px rgba(240,72,92,0); border-color: #ff6b7a; }
+        }
+      `}</style>
+
       {/* Header */}
       <div className="app-header" style={{ paddingRight: "3rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.75rem" }}>
@@ -183,8 +210,26 @@ export default function HomePage() {
         {/* Статистика */}
         {stats && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.4rem", marginBottom: "0.75rem" }}>
+            {/* Кликабельная плитка "Спасено" с анимированным счётчиком */}
+            <div
+              onClick={() => setGalleryOpen(true)}
+              style={{
+                background: "hsl(var(--card))",
+                border: "2px solid #F0485C",
+                borderRadius: "0.75rem",
+                padding: "0.4rem 0.5rem",
+                textAlign: "center",
+                cursor: "pointer",
+                animation: "savedPulse 1.8s ease-in-out infinite",
+                userSelect: "none",
+              }}
+            >
+              <div style={{ fontSize: "1.2rem", fontWeight: 900, color: "#F0485C", lineHeight: 1 }}>{savedCount}</div>
+              <div style={{ fontSize: "0.65rem", color: "hsl(var(--muted-foreground))", marginTop: "0.15rem" }}>Спасено</div>
+            </div>
+
+            {/* Остальные плитки */}
             {[
-              { label: "Спасено", value: stats.total, color: "hsl(var(--foreground))" },
               { label: "Ждут дом", value: stats.needsHelp, color: "hsl(var(--primary))" },
               { label: "Пристроены", value: stats.rehomed, color: "hsl(142 50% 45%)" },
             ].map(s => (
@@ -254,6 +299,9 @@ export default function HomePage() {
           </div>
         )}
       </div>
+
+      {/* Галерея пристроенных питомцев */}
+      <SavedGalleryModal open={galleryOpen} onClose={() => setGalleryOpen(false)} />
     </div>
   );
 }

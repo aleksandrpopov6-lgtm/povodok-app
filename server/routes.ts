@@ -70,7 +70,15 @@ export function registerRoutes(httpServer: Server, app: Express) {
   });
 
   // ── STATS ─────────────────────────────────────────────────────────────────
-  app.get("/api/stats", (_req, res) => res.json(storage.getStats()));
+  app.get("/api/stats", (_req, res) => {
+    const s = storage.getStats() as any;
+    res.json({
+      ...s,
+      total: s.total ?? (s.animals ?? 0) + (s.rehomed ?? 0),
+      needsHelp: s.needsHelp ?? s.animals ?? 0,
+      saved: 27,
+    });
+  });
 
   // ── ANIMALS ───────────────────────────────────────────────────────────────
   app.get("/api/animals", (req, res) => res.json(storage.getAnimals(req.query.status as string)));
@@ -94,6 +102,11 @@ export function registerRoutes(httpServer: Server, app: Express) {
   });
   app.patch("/api/animals/:id/status", (req, res) => {
     const a = storage.updateAnimalStatus(Number(req.params.id), req.body.status);
+    if (!a) return res.status(404).json({ error: "Not found" });
+    res.json(a);
+  });
+  app.patch("/api/animals/:id/rehome", (req, res) => {
+    const a = storage.updateAnimalStatus(Number(req.params.id), "rehomed");
     if (!a) return res.status(404).json({ error: "Not found" });
     res.json(a);
   });
