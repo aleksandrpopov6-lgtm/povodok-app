@@ -4,8 +4,9 @@ import { useHashLocation } from "wouter/use-hash-location";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Train, Phone, X, CheckCircle,
-  Cat, Dog, MapPin
+  Cat, Dog, MapPin, Camera, Send, MessageCircle
 } from "lucide-react";
+import PhoneLink from "@/components/PhoneLink";
 import { apiRequest, API_BASE } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Catcher } from "@shared/schema";
@@ -56,7 +57,32 @@ function CatchSheet({
   const { toast } = useToast();
   const [animalType, setAnimalType] = useState<"cat" | "dog">("cat");
   const [form, setForm] = useState({ address: "", clientName: "", clientPhone: "", description: "" });
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const photoRef = useState<HTMLInputElement | null>(null);
+
+  const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const buildTelegramMessage = () => {
+    const type = animalType === "cat" ? "Кошка/кот" : "Собака";
+    const lines = [
+      "🐾 НОВАЯ ЗАЯВКА НА ОТЛОВ — ПоводОК",
+      "",
+      `📍 Адрес: ${form.address}`,
+      `🐱 Животное: ${type}`,
+      `👤 Заявитель: ${form.clientName}`,
+      `📞 Телефон: ${form.clientPhone}`,
+    ];
+    if (form.description) lines.push(`📝 Описание: ${form.description}`);
+    lines.push("", "Отправлено через приложение ПоводОК");
+    return lines.join("\n");
+  };
 
   const mutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/catch-requests", data),
@@ -81,111 +107,134 @@ function CatchSheet({
     });
   };
 
+  // Открыть Telegram с автосообщением ловцу
+  const openTelegramWithMessage = () => {
+    const msg = buildTelegramMessage();
+    const encoded = encodeURIComponent(msg);
+    const catcherPhone = catcher.phone.replace(/[^\d]/g, "");
+    // Открываем Telegram с номером ловца и автозаполненным сообщением
+    const tgUrl = `https://t.me/+${catcherPhone}?text=${encoded}`;
+    window.open(tgUrl, "_blank");
+  };
+
   return (
     <>
-      <div
-        className="fixed inset-0 bg-black/60 z-[190]"
-        onClick={onClose}
-        data-testid="sheet-overlay"
-      />
-      <div className="bottom-sheet" data-testid="catch-sheet">
+      <div className="fixed inset-0 bg-black/60 z-[190]" onClick={onClose} />
+      <div className="bottom-sheet" style={{ maxHeight: "90vh", overflowY: "auto" }} data-testid="catch-sheet">
         <div className="sheet-handle" />
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-extrabold text-lg text-white">Вызвать ловца</h3>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-            data-testid="btn-close-sheet"
-          >
+          <div>
+            <h3 className="font-extrabold text-lg" style={{ color: "hsl(var(--foreground))" }}>Вызвать ловца</h3>
+            <p className="text-xs text-muted-foreground">{catcher.name}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/10 transition-colors">
             <X size={18} className="text-muted-foreground" />
           </button>
         </div>
 
         {!submitted ? (
           <form onSubmit={handleSubmit} className="space-y-3">
+            {/* Тип животного */}
             <div>
               <p className="text-xs font-bold text-muted-foreground mb-2">Тип животного</p>
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setAnimalType("cat")}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm border-2 transition-all ${
-                    animalType === "cat"
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-card text-muted-foreground"
-                  }`}
-                  data-testid="btn-type-cat"
-                >
-                  <Cat size={16} /> Кошка
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAnimalType("dog")}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm border-2 transition-all ${
-                    animalType === "dog"
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-card text-muted-foreground"
-                  }`}
-                  data-testid="btn-type-dog"
-                >
-                  <Dog size={16} /> Собака
-                </button>
+                {(["cat", "dog"] as const).map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setAnimalType(t)}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm border-2 transition-all ${
+                      animalType === t ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                    }`}
+                  >
+                    {t === "cat" ? <><Cat size={16} /> Кошка</> : <><Dog size={16} /> Собака</>}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <input
-              className="glass-input"
-              placeholder="Адрес *"
-              value={form.address}
-              onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
-              data-testid="input-address"
-            />
-            <input
-              className="glass-input"
-              placeholder="Ваше имя *"
-              value={form.clientName}
-              onChange={(e) => setForm((f) => ({ ...f, clientName: e.target.value }))}
-              data-testid="input-client-name"
-            />
-            <input
-              className="glass-input"
-              placeholder="Телефон *"
-              type="tel"
-              value={form.clientPhone}
-              onChange={(e) => setForm((f) => ({ ...f, clientPhone: e.target.value }))}
-              data-testid="input-client-phone"
-            />
-            <textarea
-              className="glass-input"
-              placeholder="Описание ситуации (необязательно)"
-              rows={2}
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              style={{ resize: "none" }}
-              data-testid="input-description"
-            />
+            <input className="glass-input" placeholder="Адрес *" value={form.address}
+              onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
+            <input className="glass-input" placeholder="Ваше имя *" value={form.clientName}
+              onChange={e => setForm(f => ({ ...f, clientName: e.target.value }))} />
+            <input className="glass-input" placeholder="Телефон *" type="tel" value={form.clientPhone}
+              onChange={e => setForm(f => ({ ...f, clientPhone: e.target.value }))} />
+            <textarea className="glass-input" placeholder="Описание ситуации (необязательно)"
+              rows={2} value={form.description}
+              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              style={{ resize: "none" }} />
 
+            {/* Фото животного */}
+            <div>
+              <p className="text-xs font-bold text-muted-foreground mb-2">Фото животного (необязательно)</p>
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                id="catch-photo"
+                className="hidden"
+                onChange={handlePhoto}
+              />
+              <label
+                htmlFor="catch-photo"
+                className="photo-upload-box"
+                style={{ aspectRatio: "16/7", cursor: "pointer" }}
+              >
+                {photoPreview ? (
+                  <img src={photoPreview} alt="preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  <>
+                    <Camera size={24} className="text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground font-medium">Сфотографировать или выбрать из галереи</span>
+                  </>
+                )}
+              </label>
+            </div>
+
+            {/* Кнопки */}
+            <div className="flex gap-2 pt-1">
+              {/* Отправить заявку в БД */}
+              <button
+                type="submit"
+                className="flex-1 gradient-primary text-white font-extrabold py-3 rounded-xl text-sm transition-opacity hover:opacity-90 disabled:opacity-40 flex items-center justify-center gap-2"
+                disabled={mutation.isPending}
+              >
+                {mutation.isPending ? "Отправляем..." : <><Send size={15} /> Отправить заявку</>}
+              </button>
+            </div>
+
+            {/* Написать ловцу напрямую в Telegram */}
             <button
-              type="submit"
-              className="w-full gradient-primary text-white font-extrabold py-3 rounded-xl text-sm transition-opacity hover:opacity-90"
-              disabled={mutation.isPending}
-              data-testid="btn-submit-catch"
+              type="button"
+              onClick={openTelegramWithMessage}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold border-2 border-border bg-card transition-opacity hover:opacity-80"
+              style={{ color: "hsl(174 70% 42%)" }}
             >
-              {mutation.isPending ? "Отправляем..." : "Отправить заявку"}
+              <MessageCircle size={16} />
+              Написать ловцу в Telegram
             </button>
+
+            <p className="text-xs text-center text-muted-foreground">
+              Телефон ловца: <PhoneLink phone={catcher.phone} showIcon={true} />
+            </p>
           </form>
         ) : (
           <div className="text-center py-6">
             <CheckCircle size={48} className="mx-auto mb-3 text-green-500" />
-            <p className="font-extrabold text-lg text-white mb-1">Заявка отправлена!</p>
+            <p className="font-extrabold text-lg mb-1" style={{ color: "hsl(var(--foreground))" }}>Заявка отправлена!</p>
             <p className="text-sm text-muted-foreground mb-4">
               {catcher.name} получит вашу заявку и свяжется с вами.
             </p>
+            {/* Дополнительно написать в Telegram */}
             <button
-              onClick={onClose}
-              className="gradient-primary text-white font-bold px-6 py-2.5 rounded-xl text-sm"
-              data-testid="btn-sheet-close-success"
+              onClick={openTelegramWithMessage}
+              className="w-full mb-2 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold border-2 border-border bg-card transition-opacity hover:opacity-80"
+              style={{ color: "hsl(174 70% 42%)" }}
             >
+              <MessageCircle size={16} />
+              Написать ловцу в Telegram
+            </button>
+            <button onClick={onClose} className="gradient-primary text-white font-bold px-6 py-2.5 rounded-xl text-sm">
               Закрыть
             </button>
           </div>

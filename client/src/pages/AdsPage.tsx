@@ -12,6 +12,7 @@ import { useUser } from "@/components/ThemeProvider";
 import { useToast } from "@/hooks/use-toast";
 import type { VolunteerAd } from "@shared/schema";
 import { ThemeToggle } from "@/components/BottomNav";
+import PhoneLink, { TelegramLink } from "@/components/PhoneLink";
 
 type PayMethod = "sbp" | "card" | "bank" | null;
 
@@ -296,7 +297,7 @@ function AdCard({ ad }: { ad: VolunteerAd }) {
             </div>
 
             <p className="text-xs text-muted-foreground mb-1.5">
-              {ad.authorName} · {ad.authorPhone}
+              {ad.authorName} · <PhoneLink phone={ad.authorPhone} showIcon={false} />
             </p>
 
             <div className="flex flex-wrap gap-1 mb-2">
@@ -326,13 +327,12 @@ function AdCard({ ad }: { ad: VolunteerAd }) {
 
         {/* Action buttons */}
         <div className="flex gap-2 mt-3">
-          <a
-            href={`tel:${ad.authorPhone}`}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold border-2 border-border bg-card transition-opacity hover:opacity-80" style={{color:"hsl(var(--foreground))"}}
+          <TelegramLink
+            phone={ad.authorPhone}
+            label="✉️ Написать"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold border-2 border-border bg-card transition-opacity hover:opacity-80"
             data-testid={`btn-contact-${ad.id}`}
-          >
-            Написать
-          </a>
+          />
           <button
             onClick={() => setDonationSheet(true)}
             className="flex-1 gradient-primary text-white font-bold py-2.5 rounded-xl text-sm transition-opacity hover:opacity-90"
