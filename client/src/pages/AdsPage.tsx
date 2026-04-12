@@ -1,434 +1,82 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useHashLocation } from "wouter/use-hash-location";
-import { motion, AnimatePresence } from "framer-motion";
+// framer-motion removed — no longer needed after removing donation sheet
 import {
-  ArrowLeft, Plus, ChevronDown, ChevronUp,
+  ArrowLeft, Plus,
   Cat, Dog, ImagePlus, CheckCircle,
-  X, Smartphone, CreditCard, Building2, Copy, Receipt
+  X
 } from "lucide-react";
 import { apiRequest, queryClient, API_BASE } from "@/lib/queryClient";
 import { useUser } from "@/components/ThemeProvider";
 import { useToast } from "@/hooks/use-toast";
 import type { VolunteerAd } from "@shared/schema";
-import { ThemeToggle } from "@/components/BottomNav";
 import PhoneLink, { TelegramLink } from "@/components/PhoneLink";
-
-type PayMethod = "sbp" | "card" | "bank" | null;
-
-/* ── Donation progress bar ── */
-function DonationProgress({ collected, needed }: { collected: number; needed: number }) {
-  const pct = Math.min(100, needed > 0 ? (collected / needed) * 100 : 0);
-  return (
-    <div>
-      <div className="donation-bar mb-1">
-        <div className="donation-fill" style={{ width: `${pct}%` }} />
-      </div>
-      <p className="text-xs text-muted-foreground">
-        <span className="font-bold text-white">{collected.toLocaleString("ru-RU")}₽</span>
-        {" "}из{" "}
-        <span className="font-semibold">{needed.toLocaleString("ru-RU")}₽</span>
-        {" "}собрано
-        <span className="ml-1 text-primary font-bold">({Math.round(pct)}%)</span>
-      </p>
-    </div>
-  );
-}
-
-/* ── Requisites collapsible ── */
-function Requisites({ ad }: { ad: VolunteerAd }) {
-  const [open, setOpen] = useState(false);
-  const has = ad.bankCard || ad.sbpPhone || ad.tinkoffLink;
-  if (!has) return null;
-  return (
-    <div className="mt-2">
-      <button
-        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-white transition-colors font-semibold"
-        onClick={() => setOpen((o) => !o)}
-        data-testid={`btn-requisites-${ad.id}`}
-      >
-        Реквизиты
-        {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="mt-2 p-3 rounded-xl space-y-1.5" style={{ background: "hsl(var(--secondary))" }}>
-              {ad.bankCard && (
-                <div className="text-xs">
-                  <span className="text-muted-foreground">Карта: </span>
-                  <span className="font-mono text-white">{ad.bankCard}</span>
-                </div>
-              )}
-              {ad.sbpPhone && (
-                <div className="text-xs">
-                  <span className="text-muted-foreground">СБП: </span>
-                  <span className="font-mono text-white">{ad.sbpPhone}</span>
-                </div>
-              )}
-              {ad.tinkoffLink && (
-                <div className="text-xs">
-                  <a
-                    href={ad.tinkoffLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline"
-                  >
-                    Tinkoff Pay →
-                  </a>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/* ── Donation bottom sheet ── */
-function DonationSheet({ ad, onClose }: { ad: VolunteerAd; onClose: () => void }) {
-  const { toast } = useToast();
-  const [amount, setAmount] = useState("100");
-  const [method, setMethod] = useState<PayMethod>(null);
-  const [confirmed, setConfirmed] = useState(false);
-  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
-  const [receiptSent, setReceiptSent] = useState(false);
-
-  const methods: { key: PayMethod; icon: React.ElementType; label: string }[] = [
-    { key: "sbp",  icon: Smartphone, label: "СБП" },
-    { key: "card", icon: CreditCard,  label: "На карту" },
-    { key: "bank", icon: Building2,   label: "Банковской картой" },
-  ];
-
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      toast({ title: `${label} скопирован` });
-    });
-  };
-
-  return (
-    <>
-      <div
-        className="fixed inset-0 bg-black/60 z-[190]"
-        onClick={onClose}
-        data-testid="sheet-overlay-donation"
-      />
-      <div className="bottom-sheet" data-testid="donation-sheet">
-        <div className="sheet-handle" />
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-extrabold text-lg" style={{color:"hsl(var(--foreground))"}}>Поддержать донатом</h3>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-            data-testid="btn-close-donation-sheet"
-          >
-            <X size={18} className="text-muted-foreground" />
-          </button>
-        </div>
-
-        {!confirmed ? (
-          <div className="space-y-4">
-            {/* Amount */}
-            <div>
-              <p className="text-xs font-bold text-muted-foreground mb-2">Сумма доната (₽)</p>
-              <input
-                className="glass-input"
-                type="number"
-                min={10}
-                placeholder="Минимум 10₽"
-                value={amount}
-                onChange={e => setAmount(e.target.value)}
-                data-testid="input-donation-amount"
-              />
-              <div className="flex gap-2 mt-2">
-                {[50, 100, 300, 500].map(v => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setAmount(String(v))}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                      amount === String(v)
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-card text-muted-foreground"
-                    }`}
-                  >
-                    {v}₽
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Payment methods */}
-            <div>
-              <p className="text-xs font-bold text-muted-foreground mb-2">Способ оплаты</p>
-              <div className="flex gap-2">
-                {methods.map(({ key, icon: Icon, label }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setMethod(key)}
-                    className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 transition-all text-xs font-bold ${
-                      method === key
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-card text-muted-foreground"
-                    }`}
-                    data-testid={`btn-paymethod-${key}`}
-                  >
-                    <Icon size={18} />
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Requisites */}
-            {method && (
-              <div className="rounded-xl p-3 border border-border" style={{ background: "hsl(var(--secondary))" }}>
-                {method === "sbp" && (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-0.5">СБП — номер телефона</p>
-                      <p className="font-mono font-bold" style={{color:"hsl(var(--foreground))"}}>
-                        {ad.sbpPhone || "+7 999 000 11 22"}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => copyToClipboard(ad.sbpPhone || "+79990001122", "Номер")}
-                      className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground"
-                    >
-                      <Copy size={16} />
-                    </button>
-                  </div>
-                )}
-                {method === "card" && (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-0.5">Номер карты</p>
-                      <p className="font-mono font-bold" style={{color:"hsl(var(--foreground))"}}>
-                        {ad.bankCard || "2200 7010 1234 5678"}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => copyToClipboard(ad.bankCard || "2200701012345678", "Номер карты")}
-                      className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground"
-                    >
-                      <Copy size={16} />
-                    </button>
-                  </div>
-                )}
-                {method === "bank" && (
-                  <p className="text-sm text-muted-foreground">
-                    Функция онлайн-оплаты будет доступна в ближайшее время
-                  </p>
-                )}
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setConfirmed(true)}
-              disabled={!method || !amount || Number(amount) < 10}
-              className="w-full gradient-primary text-white font-extrabold py-3 rounded-xl text-sm transition-opacity hover:opacity-90 disabled:opacity-40"
-              data-testid="btn-confirm-donation"
-            >
-              Спасибо!
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4 py-2">
-            {/* Success */}
-            <div className="text-center">
-              <CheckCircle size={44} className="mx-auto mb-2 text-green-500" />
-              <p className="font-extrabold text-lg" style={{color:"hsl(var(--foreground))"}}>Спасибо за помощь!</p>
-              <p className="text-sm text-muted-foreground mt-1">Ваш донат поможет питомцу.</p>
-            </div>
-
-            {/* Receipt upload */}
-            {!receiptSent ? (
-              <div className="rounded-xl border border-border p-3 space-y-2" style={{ background: "hsl(var(--card))" }}>
-                <p className="text-xs font-bold text-muted-foreground">
-                  Прикрепите чек для статистики (необязательно)
-                </p>
-                {receiptPreview ? (
-                  <div className="relative">
-                    <img
-                      src={receiptPreview}
-                      alt="Чек"
-                      className="w-full max-h-40 object-contain rounded-lg border border-border"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setReceiptPreview(null)}
-                      className="absolute top-1 right-1 bg-black/60 text-white rounded-full px-1 text-xs"
-                    >✕</button>
-                  </div>
-                ) : (
-                  <label className="flex items-center gap-2 cursor-pointer py-2.5 px-3 rounded-xl border-2 border-dashed"
-                    style={{ borderColor: "hsl(var(--border))" }}>
-                    <input
-                      type="file"
-                      accept="image/*,application/pdf"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) setReceiptPreview(URL.createObjectURL(file));
-                      }}
-                    />
-                    <ImagePlus size={18} className="text-muted-foreground" />
-                    <span className="text-xs font-semibold text-muted-foreground">
-                      Фото или скрин чека
-                    </span>
-                  </label>
-                )}
-                <button
-                  type="button"
-                  className="w-full font-bold text-sm py-2.5 rounded-xl transition-opacity"
-                  style={{
-                    background: receiptPreview ? "linear-gradient(135deg,#EE5FA2,#F0485C)" : "hsl(var(--secondary))",
-                    color: receiptPreview ? "white" : "hsl(var(--muted-foreground))",
-                  }}
-                  onClick={() => {
-                    if (receiptPreview) {
-                      toast({ title: "Чек отправлен!", description: "Спасибо — это помогает нам вести статистику." });
-                    }
-                    setReceiptSent(true);
-                  }}
-                >
-                  <span className="flex items-center justify-center gap-1.5">
-                    <Receipt size={15} />
-                    {receiptPreview ? "Отправил — прикрепить чек" : "Отправил без чека"}
-                  </span>
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-                <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
-                <p className="text-xs font-semibold text-green-700 dark:text-green-400">
-                  {receiptPreview ? "Чек получен, спасибо!" : "Отметили ваш донат, спасибо!"}
-                </p>
-              </div>
-            )}
-
-            <button
-              onClick={onClose}
-              className="w-full py-2.5 rounded-xl text-sm font-bold border border-border text-muted-foreground"
-              style={{ background: "hsl(var(--secondary))" }}
-            >
-              Закрыть
-            </button>
-          </div>
-        )}
-      </div>
-    </>
-  );
-}
 
 /* ── Ad card ── */
 function AdCard({ ad }: { ad: VolunteerAd }) {
-  const hasTreatment = ad.adType === "treatment" || ad.adType === "both";
-  const [donationSheet, setDonationSheet] = useState(false);
-
   return (
-    <>
-      <div className="ad-card p-4" data-testid={`ad-card-${ad.id}`}>
-        <div className="flex gap-3">
-          {/* Photo */}
-          <div className="flex-shrink-0">
-            <img
-              src={ad.photoUrl}
-              alt={ad.animalName}
-              className="w-20 h-20 rounded-xl object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "https://via.placeholder.com/80x80/1a1c22/666?text=🐾";
-              }}
-            />
-          </div>
-
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start gap-2 mb-1">
-              <h3 className="font-extrabold text-base leading-tight flex-1 min-w-0 truncate" style={{color:"hsl(var(--foreground))"}}>
-                {ad.title}
-              </h3>
-              <span
-                className={`tag flex-shrink-0 ${
-                  ad.adType === "rehome"
-                    ? "tag-green"
-                    : ad.adType === "treatment"
-                    ? "tag-coral"
-                    : "tag-amber"
-                }`}
-              >
-                {ad.adType === "rehome" ? "Пристройство" : ad.adType === "treatment" ? "Лечение" : "Оба"}
-              </span>
-            </div>
-
-            <p className="text-xs text-muted-foreground mb-1.5">
-              {ad.authorName} · <PhoneLink phone={ad.authorPhone} showIcon={false} />
-            </p>
-
-            <div className="flex flex-wrap gap-1 mb-2">
-              <span className="tag tag-muted">{ad.animalName}</span>
-              {ad.animalType === "cat" ? (
-                <span className="tag tag-muted"><Cat size={10} /> кошка</span>
-              ) : ad.animalType === "dog" ? (
-                <span className="tag tag-muted"><Dog size={10} /> собака</span>
-              ) : (
-                <span className="tag tag-muted">{ad.animalType}</span>
-              )}
-              {ad.animalAge && <span className="tag tag-muted">{ad.animalAge}</span>}
-            </div>
-
-            {hasTreatment && ad.donationNeeded && ad.donationNeeded > 0 && (
-              <div className="mb-2">
-                <DonationProgress
-                  collected={ad.donationCollected}
-                  needed={ad.donationNeeded}
-                />
-              </div>
-            )}
-
-            <Requisites ad={ad} />
-          </div>
+    <div className="ad-card p-4" data-testid={`ad-card-${ad.id}`}>
+      <div className="flex gap-3">
+        {/* Photo */}
+        <div className="flex-shrink-0">
+          <img
+            src={ad.photoUrl}
+            alt={ad.animalName}
+            className="w-20 h-20 rounded-xl object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "https://via.placeholder.com/80x80/1a1c22/666?text=🐾";
+            }}
+          />
         </div>
 
-        {/* Action buttons */}
-        <div className="flex gap-2 mt-3">
-          <TelegramLink
-            phone={ad.authorPhone}
-            label="✉️ Написать"
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold border-2 border-border bg-card transition-opacity hover:opacity-80"
-            data-testid={`btn-contact-${ad.id}`}
-          />
-          <button
-            onClick={() => setDonationSheet(true)}
-            className="flex-1 gradient-primary text-white font-bold py-2.5 rounded-xl text-sm transition-opacity hover:opacity-90"
-            data-testid={`btn-donate-${ad.id}`}
-          >
-            Донат
-          </button>
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start gap-2 mb-1">
+            <h3 className="font-extrabold text-base leading-tight flex-1 min-w-0 truncate" style={{color:"hsl(var(--foreground))"}}>
+              {ad.title}
+            </h3>
+            <span
+              className={`tag flex-shrink-0 ${
+                ad.adType === "rehome"
+                  ? "tag-green"
+                  : ad.adType === "treatment"
+                  ? "tag-coral"
+                  : "tag-amber"
+              }`}
+            >
+              {ad.adType === "rehome" ? "Пристройство" : ad.adType === "treatment" ? "Лечение" : "Оба"}
+            </span>
+          </div>
+
+          <p className="text-xs text-muted-foreground mb-1.5">
+            {ad.authorName} · <PhoneLink phone={ad.authorPhone} showIcon={false} />
+          </p>
+
+          <div className="flex flex-wrap gap-1 mb-2">
+            <span className="tag tag-muted">{ad.animalName}</span>
+            {ad.animalType === "cat" ? (
+              <span className="tag tag-muted"><Cat size={10} /> кошка</span>
+            ) : ad.animalType === "dog" ? (
+              <span className="tag tag-muted"><Dog size={10} /> собака</span>
+            ) : (
+              <span className="tag tag-muted">{ad.animalType}</span>
+            )}
+            {ad.animalAge && <span className="tag tag-muted">{ad.animalAge}</span>}
+          </div>
         </div>
       </div>
 
-      {/* Donation sheet */}
-      <AnimatePresence>
-        {donationSheet && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <DonationSheet ad={ad} onClose={() => setDonationSheet(false)} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+      {/* Action buttons — only "Write" button */}
+      <div className="flex gap-2 mt-3">
+        <TelegramLink
+          phone={ad.authorPhone}
+          label="✉️ Написать"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold gradient-primary text-white transition-opacity hover:opacity-90"
+          data-testid={`btn-contact-${ad.id}`}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -447,10 +95,6 @@ function CreateAdForm({ onBack }: { onBack: () => void }) {
     description: "",
     adType: "rehome" as "rehome" | "treatment" | "both",
     location: "",
-    donationNeeded: "",
-    bankCard: "",
-    sbpPhone: "",
-    tinkoffLink: "",
   });
 
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -490,10 +134,10 @@ function CreateAdForm({ onBack }: { onBack: () => void }) {
       photoUrl: photoPreview || "https://placekitten.com/400/400",
       adType: form.adType,
       location: form.location,
-      donationNeeded: form.donationNeeded ? Number(form.donationNeeded) : null,
-      bankCard: form.bankCard || null,
-      sbpPhone: form.sbpPhone || null,
-      tinkoffLink: form.tinkoffLink || null,
+      donationNeeded: null,
+      bankCard: null,
+      sbpPhone: null,
+      tinkoffLink: null,
       createdAt: new Date().toISOString(),
     });
   };
@@ -549,8 +193,6 @@ function CreateAdForm({ onBack }: { onBack: () => void }) {
       </div>
     );
   }
-
-  const hasDonation = form.adType === "treatment" || form.adType === "both";
 
   return (
     <div className="page" style={{overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
@@ -662,49 +304,6 @@ function CreateAdForm({ onBack }: { onBack: () => void }) {
             ))}
           </div>
         </div>
-
-        {/* Donation fields */}
-        <AnimatePresence>
-          {hasDonation && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden space-y-3"
-            >
-              <input
-                className="glass-input"
-                placeholder="Нужная сумма (₽)"
-                type="number"
-                value={form.donationNeeded}
-                onChange={(e) => setForm((f) => ({ ...f, donationNeeded: e.target.value }))}
-                data-testid="input-donation-needed"
-              />
-              <input
-                className="glass-input"
-                placeholder="Номер карты"
-                value={form.bankCard}
-                onChange={(e) => setForm((f) => ({ ...f, bankCard: e.target.value }))}
-                data-testid="input-bank-card"
-              />
-              <input
-                className="glass-input"
-                placeholder="СБП телефон"
-                type="tel"
-                value={form.sbpPhone}
-                onChange={(e) => setForm((f) => ({ ...f, sbpPhone: e.target.value }))}
-                data-testid="input-sbp-phone"
-              />
-              <input
-                className="glass-input"
-                placeholder="Ссылка Тинькофф"
-                value={form.tinkoffLink}
-                onChange={(e) => setForm((f) => ({ ...f, tinkoffLink: e.target.value }))}
-                data-testid="input-tinkoff-link"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         <input
           className="glass-input"

@@ -310,9 +310,13 @@ function CatcherCard({ catcher, onHire }: { catcher: Catcher; onHire: () => void
 
           <EquipmentTags catcher={catcher} />
 
-          {/* Free badge instead of price */}
+          {/* Price badge */}
           <div className="mt-2 mb-2">
-            <span className="tag tag-green font-bold">Ловцы работают бесплатно</span>
+            {catcher.priceInMkad > 0 ? (
+              <span className="tag tag-amber font-bold">💰 от {catcher.priceInMkad}₽</span>
+            ) : (
+              <span className="tag tag-green font-bold">💚 Бесплатно</span>
+            )}
           </div>
 
           <div className="flex items-center justify-between">

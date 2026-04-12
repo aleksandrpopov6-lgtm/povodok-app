@@ -272,6 +272,7 @@ export interface IStorage {
   getCatchers(filters?: any): Catcher[];
   getCatcher(id: number): Catcher | undefined;
   createCatcher(data: InsertCatcher): Catcher;
+  updateCatcherPrice(id: number, priceInMkad: number, priceOutMkad: number | null): Catcher | undefined;
 
   getBoardings(filters?: any): Boarding[];
   getBoarding(id: number): Boarding | undefined;
@@ -324,6 +325,9 @@ export class Storage implements IStorage {
   }
   getCatcher(id: number) { return db.select().from(catchers).where(eq(catchers.id, id)).get(); }
   createCatcher(data: InsertCatcher) { return db.insert(catchers).values(data).returning().get(); }
+  updateCatcherPrice(id: number, priceInMkad: number, priceOutMkad: number | null) {
+    return db.update(catchers).set({ priceInMkad, priceOutMkad }).where(eq(catchers.id, id)).returning().get();
+  }
 
   getBoardings(filters?: any) {
     return db.select().from(boardings).where(eq(boardings.isActive, true)).all().filter((b: any) => {

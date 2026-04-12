@@ -289,6 +289,41 @@ export function registerRoutes(httpServer: Server, app: Express) {
   });
 
 
+
+  // ── TELEGRAM NOTIFICATION ──────────────────────────────────────────────────
+  app.post("/api/notify-telegram", async (req, res) => {
+    try {
+      const { chatId, message } = req.body;
+      if (!chatId || !message) return res.status(400).json({ error: "chatId and message required" });
+      const TOKEN = "8672654565:AAF0beZ2x-Dhj2cqqwC-LSBfLAjs-DG-4WQ";
+      const resp = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: "HTML" }),
+      });
+      const data = await resp.json();
+      if (!data.ok) {
+        console.error("Telegram API error:", data);
+        return res.status(502).json({ error: "Telegram API error", details: data });
+      }
+      res.json({ success: true });
+    } catch (e: any) {
+      console.error("Telegram notify error:", e);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // ── CATCHERS PRICE UPDATE ─────────────────────────────────────────────────
+  app.patch("/api/catchers/:id/price", (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const { priceInMkad, priceOutMkad } = req.body;
+      const result = storage.updateCatcherPrice(id, Number(priceInMkad) || 0, priceOutMkad != null ? Number(priceOutMkad) : null);
+      if (!result) return res.status(404).json({ error: "Catcher not found" });
+      res.json(result);
+    } catch (e: any) { res.status(400).json({ error: e.message }); }
+  });
+
   // ── GENERATE INVOICE PDF (Python ReportLab) ──────────────────────────────
   app.post("/api/invoice", async (req, res) => {
     try {

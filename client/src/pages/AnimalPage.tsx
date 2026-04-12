@@ -4,10 +4,9 @@ import { useParams } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
 import {
   ArrowLeft, Heart, Home as HomeIcon, Stethoscope,
-  UtensilsCrossed, Banknote, MapPin, CalendarDays,
+  UtensilsCrossed, MapPin, CalendarDays,
   CheckCircle, Play, Pause, Volume2, VolumeX,
-  Smartphone, CreditCard, Building2, Copy, Navigation,
-  Receipt, ImagePlus
+  Navigation
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,14 +18,11 @@ import { apiRequest, queryClient, API_BASE } from "@/lib/queryClient";
 import type { Animal } from "@shared/schema";
 
 const helpOptions = [
+  { id: "home",    icon: Heart,           label: "Забрать домой",    desc: "Стать хозяином",                color: "text-primary",    needKey: "needsHome" },
   { id: "food",    icon: UtensilsCrossed, label: "Купить корм",      desc: "Помочь с едой и лакомствами",   color: "text-orange-500", needKey: "needsFood" },
-  { id: "shelter", icon: HomeIcon,        label: "Построить домик",  desc: "Тёплый домик для улицы",        color: "text-blue-500",   needKey: "needsShelter" },
-  { id: "medical", icon: Stethoscope,     label: "Оплатить лечение", desc: "Ветеринарная помощь",           color: "text-red-500",    needKey: "needsMedical" },
-  { id: "adopt",   icon: Heart,           label: "Забрать домой",    desc: "Стать хозяином",                color: "text-primary",    needKey: "needsHome" },
-  { id: "money",   icon: Banknote,        label: "Денежная помощь",  desc: "Любая сумма поможет",           color: "text-green-500",  needKey: null },
+  { id: "shelter", icon: HomeIcon,        label: "Купить домик",     desc: "Тёплый домик для улицы",        color: "text-blue-500",   needKey: "needsShelter" },
+  { id: "medicine",icon: Stethoscope,     label: "Купить лекарства", desc: "Ветеринарная помощь",           color: "text-red-500",    needKey: "needsMedical" },
 ];
-
-type PayMethod = "sbp" | "card" | "bank" | null;
 
 /* ── Inline video player ───────────────────────────────── */
 function VideoPlayer({ src }: { src: string }) {
@@ -88,244 +84,6 @@ function VideoPlayer({ src }: { src: string }) {
   );
 }
 
-/* ── Money help flow ──────────────────────────────────── */
-function MoneyHelpFlow({ onConfirm, animalName }: { onConfirm: () => void; animalName: string }) {
-  const { toast } = useToast();
-  const [amount, setAmount] = useState("100");
-  const [method, setMethod] = useState<PayMethod>(null);
-  const [confirmed, setConfirmed] = useState(false);
-  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
-  const [receiptSent, setReceiptSent] = useState(false);
-
-  const presets = [50, 100, 300, 500];
-
-  const methods: { key: PayMethod; icon: React.ElementType; label: string }[] = [
-    { key: "sbp",  icon: Smartphone,  label: "СБП" },
-    { key: "card", icon: CreditCard,  label: "На карту" },
-    { key: "bank", icon: Building2,   label: "Банковской картой" },
-  ];
-
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      toast({ title: `${label} скопирован` });
-    });
-  };
-
-  const showRequisites = method && amount && Number(amount) >= 1;
-
-  return (
-    <div className="bg-card rounded-xl p-4 border border-border mb-4 space-y-4">
-      {/* Title with animal name */}
-      <h3 className="font-bold text-base" style={{ color: "hsl(var(--foreground))" }}>
-        Помочь {animalName} ❤️
-      </h3>
-
-      {/* Amount presets */}
-      <div>
-        <Label className="text-xs font-semibold mb-2 block" style={{ color: "hsl(var(--muted-foreground))" }}>
-          Сумма доната (₽)
-        </Label>
-        <Input
-          type="number"
-          min={1}
-          placeholder="Сумма в рублях"
-          value={amount}
-          onChange={e => setAmount(e.target.value)}
-          className="mb-2"
-          data-testid="input-donation-amount"
-        />
-        <div className="flex gap-2">
-          {presets.map(p => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setAmount(String(p))}
-              className="flex-1 py-1.5 rounded-xl text-xs font-bold border-2 transition-all"
-              style={{
-                borderColor: amount === String(p) ? "hsl(var(--primary))" : "hsl(var(--border))",
-                background: amount === String(p) ? "hsl(var(--primary) / 0.1)" : "hsl(var(--card))",
-                color: amount === String(p) ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
-              }}
-            >
-              {p}₽
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Payment methods */}
-      <div>
-        <Label className="text-xs font-semibold mb-2 block" style={{ color: "hsl(var(--muted-foreground))" }}>
-          Способ оплаты
-        </Label>
-        <div className="flex gap-2">
-          {methods.map(({ key, icon: Icon, label }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setMethod(key)}
-              className="flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 transition-all text-xs font-bold"
-              style={{
-                borderColor: method === key ? "hsl(var(--primary))" : "hsl(var(--border))",
-                background: method === key ? "hsl(var(--primary) / 0.1)" : "hsl(var(--card))",
-                color: method === key ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
-              }}
-              data-testid={`btn-paymethod-${key}`}
-            >
-              <Icon size={18} />
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Requisites — светлый фон в обеих темах */}
-      {showRequisites && (
-        <div
-          className="rounded-xl p-3 border border-border"
-          style={{
-            background: "hsl(var(--secondary))",
-          }}
-        >
-          {method === "sbp" && (
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs mb-0.5" style={{ color: "hsl(var(--muted-foreground))" }}>
-                  СБП — номер телефона
-                </p>
-                <p className="font-mono font-bold text-base" style={{ color: "hsl(var(--foreground))" }}>
-                  +7 999 000 11 22
-                </p>
-              </div>
-              <button
-                onClick={() => copyToClipboard("+79990001122", "Номер")}
-                className="p-2 rounded-lg transition-colors"
-                style={{ color: "hsl(var(--muted-foreground))" }}
-                data-testid="btn-copy-sbp"
-              >
-                <Copy size={16} />
-              </button>
-            </div>
-          )}
-          {method === "card" && (
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs mb-0.5" style={{ color: "hsl(var(--muted-foreground))" }}>
-                  Номер карты
-                </p>
-                <p className="font-mono font-bold text-base" style={{ color: "hsl(var(--foreground))" }}>
-                  2200 7010 1234 5678
-                </p>
-              </div>
-              <button
-                onClick={() => copyToClipboard("2200701012345678", "Номер карты")}
-                className="p-2 rounded-lg transition-colors"
-                style={{ color: "hsl(var(--muted-foreground))" }}
-                data-testid="btn-copy-card"
-              >
-                <Copy size={16} />
-              </button>
-            </div>
-          )}
-          {method === "bank" && (
-            <p className="text-sm" style={{ color: "hsl(var(--muted-foreground))" }}>
-              Функция онлайн-оплаты будет доступна в ближайшее время
-            </p>
-          )}
-        </div>
-      )}
-
-      {!confirmed ? (
-        <Button
-          type="button"
-          className="w-full gradient-primary text-white font-bold"
-          onClick={() => { setConfirmed(true); onConfirm(); }}
-          data-testid="btn-money-confirm"
-        >
-          Спасибо за помощь!
-        </Button>
-      ) : (
-        <div className="space-y-3">
-          {/* Success message */}
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-            <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
-            <p className="text-sm font-semibold text-green-700 dark:text-green-400">
-              Спасибо! Ваш донат поможет {animalName}.
-            </p>
-          </div>
-
-          {/* Receipt upload */}
-          {!receiptSent ? (
-            <div className="rounded-xl border border-border p-3 space-y-2" style={{ background: "hsl(var(--card))" }}>
-              <p className="text-xs font-bold" style={{ color: "hsl(var(--muted-foreground))" }}>
-                Прикрепите чек для статистики (необязательно)
-              </p>
-              {receiptPreview ? (
-                <div className="relative">
-                  <img
-                    src={receiptPreview}
-                    alt="Чек"
-                    className="w-full max-h-40 object-contain rounded-lg border border-border"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setReceiptPreview(null)}
-                    className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5"
-                  >
-                    <span className="text-xs px-1">✕</span>
-                  </button>
-                </div>
-              ) : (
-                <label className="flex items-center gap-2 cursor-pointer py-2.5 px-3 rounded-xl border-2 border-dashed transition-colors"
-                  style={{ borderColor: "hsl(var(--border))" }}>
-                  <input
-                    type="file"
-                    accept="image/*,application/pdf"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) setReceiptPreview(URL.createObjectURL(file));
-                    }}
-                  />
-                  <ImagePlus size={18} style={{ color: "hsl(var(--muted-foreground))" }} />
-                  <span className="text-xs font-semibold" style={{ color: "hsl(var(--muted-foreground))" }}>
-                    Фото или скрин чека
-                  </span>
-                </label>
-              )}
-              <Button
-                type="button"
-                className="w-full font-bold text-sm"
-                style={{
-                  background: receiptPreview ? "linear-gradient(135deg,#EE5FA2,#F0485C)" : "hsl(var(--secondary))",
-                  color: receiptPreview ? "white" : "hsl(var(--muted-foreground))",
-                }}
-                onClick={() => {
-                  if (receiptPreview) {
-                    toast({ title: "Чек отправлен!", description: "Спасибо — это помогает нам вести статистику." });
-                  }
-                  setReceiptSent(true);
-                }}
-                data-testid="btn-send-receipt"
-              >
-                <Receipt size={15} className="mr-1.5" />
-                {receiptPreview ? "Отправил — прикрепить чек" : "Отправил без чека"}
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-              <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
-              <p className="text-xs font-semibold text-green-700 dark:text-green-400">
-                {receiptPreview ? "Чек получен, спасибо!" : "Отметили ваш донат, спасибо!"}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function AnimalPage() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useHashLocation();
@@ -350,12 +108,7 @@ export default function AnimalPage() {
     onError: () => toast({ title: "Ошибка", description: "Попробуйте ещё раз", variant: "destructive" }),
   });
 
-  const donationMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/donations", data),
-    onSuccess: () => setSubmitted(true),
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.contactName || !form.contactPhone) {
       toast({ title: "Заполните имя и телефон", variant: "destructive" });
@@ -369,6 +122,22 @@ export default function AnimalPage() {
       message: form.message,
       createdAt: new Date().toISOString(),
     });
+
+    // Send Telegram notification to author
+    const helpLabel = helpOptions.find(h => h.id === selectedHelp)?.label || selectedHelp;
+    const tgMessage = `🐾 <b>Новая заявка!</b>\nПитомец: ${animal?.name}\nТип помощи: ${helpLabel}\nОт: ${form.contactName} (${form.contactPhone})${form.message ? `\n${form.message}` : ""}`;
+    const authorTgId = (animal as any)?.authorTelegramId;
+    if (authorTgId) {
+      try {
+        await fetch(`${API_BASE}/api/notify-telegram`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chatId: String(authorTgId), message: tgMessage }),
+        });
+      } catch (err) {
+        console.warn("Telegram notification failed:", err);
+      }
+    }
   };
 
   if (isLoading) return (
@@ -478,22 +247,8 @@ export default function AnimalPage() {
               })}
             </div>
 
-            {/* Money help flow — special UI */}
-            {showForm && selectedHelp === "money" && (
-              <MoneyHelpFlow animalName={animal.name} onConfirm={() => {
-                donationMutation.mutate({
-                  animalId: Number(id),
-                  donorName: "Аноним",
-                  amount: 0,
-                  message: "",
-                  createdAt: new Date().toISOString(),
-                });
-                setSubmitted(true);
-              }} />
-            )}
-
-            {/* Contact form for all other options */}
-            {showForm && selectedHelp && selectedHelp !== "money" && (
+            {/* Contact form for help request */}
+            {showForm && selectedHelp && (
               <form onSubmit={handleSubmit} className="space-y-3 bg-card rounded-xl p-4 border border-border mb-4">
                 <h3 className="font-bold text-sm text-foreground">{helpOptions.find(h => h.id === selectedHelp)?.label}</h3>
                 <div>

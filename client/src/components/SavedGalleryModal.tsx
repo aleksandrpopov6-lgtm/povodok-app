@@ -15,7 +15,6 @@ const SAVED_CATS = [
   { name: "Джеки",          date: "25.08.25",  location: "Балашиха",      photo: "https://povodok.pro/kotiki/djeki.jpg" },
   { name: "Линда мл.",      date: "05.10.25",  location: "Волгоградка",   photo: "https://povodok.pro/kotiki/linda_mlad.jpg" },
   { name: "Рысь",           date: "03.11.25",  location: "Курская",       photo: "https://povodok.pro/kotiki/rys.jpg" },
-  { name: "Гречка",         date: "Дек 2025",  location: "Тульская",      photo: "https://povodok.pro/kotiki/grechka.jpg" },
   { name: "Рис",            date: "Янв 2026",  location: "",              photo: "https://povodok.pro/kotiki/ris.jpg" },
   { name: "Коша",           date: "Ноя 2025",  location: "Химки",         photo: "https://povodok.pro/kotiki/kosha.jpg" },
   { name: "Чернышевский",   date: "Янв 2026",  location: "Химки",         photo: "https://povodok.pro/kotiki/chernyshevsky.jpg" },

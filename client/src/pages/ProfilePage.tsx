@@ -315,6 +315,63 @@ function SubscriptionModal({
 }
 
 /* ─────────────────────────────────────────────────────────────────
+   Support Project Card
+───────────────────────────────────────────────────────────────── */
+function SupportProjectCard() {
+  const [selectedPlan, setSelectedPlan] = useState<number | null>(null);
+
+  const plans = [
+    { name: "Базовый", price: 99 },
+    { name: "Стандарт", price: 299 },
+    { name: "Премиум", price: 599 },
+  ];
+
+  return (
+    <div className="rounded-xl p-4 space-y-3" style={{ background: "hsl(var(--primary) / 0.08)", border: "2px solid hsl(var(--primary) / 0.3)" }}>
+      <div>
+        <h3 className="font-black text-base" style={{ color: "hsl(var(--foreground))" }}>Поддержать ПоводОК</h3>
+        <p className="text-xs mt-1" style={{ color: "hsl(var(--muted-foreground))" }}>
+          Ваша подписка помогает развивать платформу и спасать больше животных
+        </p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        {plans.map(plan => (
+          <button
+            key={plan.price}
+            onClick={() => setSelectedPlan(plan.price === selectedPlan ? null : plan.price)}
+            className="flex flex-col items-center gap-1 py-3 rounded-xl border-2 transition-all text-center"
+            style={{
+              borderColor: selectedPlan === plan.price ? "hsl(var(--primary))" : "hsl(var(--border))",
+              background: selectedPlan === plan.price ? "hsl(var(--primary) / 0.15)" : "hsl(var(--card))",
+            }}
+            data-testid={`btn-support-${plan.price}`}
+          >
+            <span className="text-xs font-bold" style={{ color: "hsl(var(--muted-foreground))" }}>{plan.name}</span>
+            <span className="font-black text-base gradient-primary-text">{plan.price}₽</span>
+            <span className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>/мес</span>
+          </button>
+        ))}
+      </div>
+
+      {selectedPlan && (
+        <div className="rounded-xl p-3 space-y-2" style={{ background: "hsl(var(--secondary))", border: "1px solid hsl(var(--border))" }}>
+          <p className="text-sm font-bold" style={{ color: "hsl(var(--foreground))" }}>
+            Переведите {selectedPlan}₽ на +79296146024
+          </p>
+          <p className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>
+            Сбер / ТКофф / ВТБ — Воробьёва Виолетта Игоревна
+          </p>
+          <p className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>
+            После перевода пришлите чек в @Povodokpro_bot
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
    Main Profile Page
 ───────────────────────────────────────────────────────────────── */
 export default function ProfilePage() {
@@ -330,12 +387,36 @@ export default function ProfilePage() {
   const [showPayModal, setShowPayModal] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState(300);
   const [showChangePlan, setShowChangePlan] = useState(false);
+  const [catcherPriceInMkad, setCatcherPriceInMkad] = useState("0");
+  const [catcherPriceOutMkad, setCatcherPriceOutMkad] = useState("0");
   const [extraFields, setExtraFields] = useState({
     serviceArea: "", serviceRadiusKm: 5,
     hasNet: false, hasTrap: false, hasCatTrap: false,
     worksCats: true, worksDogs: true,
     address: "", phone: "", website: "", yandexMapsLink: "",
     workingHours: "", description: "", inn: "", pricePerDay: "",
+  });
+
+  const savePricesMutation = useMutation({
+    mutationFn: async () => {
+      // We need the catcher id — for simplicity, we look up by user id
+      const res = await fetch(`${API_BASE}/api/catchers`);
+      const catchers = await res.json();
+      const myCatcher = catchers.find((c: any) => c.userId === user?.id);
+      if (!myCatcher) throw new Error("Ловец не найден");
+      const resp = await fetch(`${API_BASE}/api/catchers/${myCatcher.id}/price`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          priceInMkad: Number(catcherPriceInMkad) || 0,
+          priceOutMkad: Number(catcherPriceOutMkad) || 0,
+        }),
+      });
+      if (!resp.ok) throw new Error("Ошибка сохранения");
+      return resp.json();
+    },
+    onSuccess: () => toast({ title: "Цены сохранены" }),
+    onError: (e: any) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
 
   const updateMutation = useMutation({
@@ -364,6 +445,9 @@ export default function ProfilePage() {
     setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
   };
+
+  // If user came from Telegram, check tgUser
+  const isTgUser = Boolean(user?.tgUser);
 
   if (!user) {
     return (
@@ -442,10 +526,12 @@ export default function ProfilePage() {
               </div>}
         </div>
 
-        {/* Phone */}
+        {/* Phone / Telegram username */}
         <div className="rounded-xl p-3 text-sm flex items-center gap-2" style={{ background: "hsl(var(--secondary))", color: "hsl(var(--muted-foreground))" }}>
-          <Phone size={15} /><span>{user.phone}</span>
-          <span className="ml-auto text-xs opacity-60">нельзя изменить</span>
+          <Phone size={15} />
+          <span>{isTgUser && user.tgUser?.username ? `@${user.tgUser.username}` : user.phone}</span>
+          {isTgUser && <span className="ml-auto text-xs opacity-60">Telegram</span>}
+          {!isTgUser && <span className="ml-auto text-xs opacity-60">нельзя изменить</span>}
         </div>
 
         {/* City */}
@@ -485,6 +571,46 @@ export default function ProfilePage() {
                   className={`tag cursor-pointer ${(extraFields as any)[key] ? "tag-teal" : "tag-muted"}`}>{label}</button>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Catcher pricing section */}
+        {role === "catcher" && (
+          <div className="rounded-xl p-3 space-y-3" style={{ background: "hsl(var(--secondary))", border: "1px solid hsl(var(--border))" }}>
+            <p className="text-sm font-bold" style={{ color: "hsl(var(--foreground))" }}>💰 Мои цены</p>
+            <div>
+              <label className="text-xs font-semibold block mb-1" style={{ color: "hsl(var(--muted-foreground))" }}>Цена в МКАД (₽)</label>
+              <input
+                type="number"
+                min={0}
+                value={catcherPriceInMkad}
+                onChange={e => setCatcherPriceInMkad(e.target.value)}
+                className="glass-input text-sm"
+                placeholder="0"
+                data-testid="input-price-in-mkad"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold block mb-1" style={{ color: "hsl(var(--muted-foreground))" }}>Цена за МКАД (₽)</label>
+              <input
+                type="number"
+                min={0}
+                value={catcherPriceOutMkad}
+                onChange={e => setCatcherPriceOutMkad(e.target.value)}
+                className="glass-input text-sm"
+                placeholder="0"
+                data-testid="input-price-out-mkad"
+              />
+            </div>
+            <p className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>Оставьте 0 чтобы работать бесплатно</p>
+            <button
+              onClick={() => savePricesMutation.mutate()}
+              disabled={savePricesMutation.isPending}
+              className="w-full gradient-primary text-white font-bold py-2.5 rounded-xl text-sm disabled:opacity-50"
+              data-testid="btn-save-prices"
+            >
+              {savePricesMutation.isPending ? "Сохраняем..." : "Сохранить цены"}
+            </button>
           </div>
         )}
 
@@ -618,6 +744,9 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+
+        {/* ── SUPPORT PROJECT SECTION ── */}
+        <SupportProjectCard />
 
         {/* Logout */}
         <button onClick={() => { setUser(null); navigate("/"); }}

@@ -1,5 +1,26 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
+// ── Telegram WebApp types ────────────────────────────────────────────────────
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: {
+        initDataUnsafe?: {
+          user?: {
+            id: number;
+            first_name: string;
+            last_name?: string;
+            username?: string;
+            photo_url?: string;
+          };
+        };
+        ready?: () => void;
+        expand?: () => void;
+      };
+    };
+  }
+}
+
 // ── Theme ────────────────────────────────────────────────────────────────────
 const ThemeCtx = createContext<{ theme: string; toggle: () => void }>({ theme: "dark", toggle: () => {} });
 
@@ -32,6 +53,13 @@ export type AppUser = {
   isSubscribed: boolean;
   avatarUrl?: string | null;
   city?: string;
+  tgUser?: {
+    id: number;
+    first_name: string;
+    last_name?: string;
+    username?: string;
+    photo_url?: string;
+  } | null;
 } | null;
 
 const UserCtx = createContext<{ user: AppUser; setUser: (u: AppUser) => void }>({
@@ -45,3 +73,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useUser = () => useContext(UserCtx);
+
+/** Helper to read Telegram WebApp user */
+export function getTelegramUser() {
+  return window.Telegram?.WebApp?.initDataUnsafe?.user ?? null;
+}
