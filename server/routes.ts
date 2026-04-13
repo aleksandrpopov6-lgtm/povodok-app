@@ -108,6 +108,62 @@ export function registerRoutes(httpServer: Server, app: Express) {
   });
 
   // ── ANIMALS ───────────────────────────────────────────────────────────────
+  /* ── MAX Bot webhook ─────────────────────────────────────────── */
+  app.post("/api/max-webhook", async (req, res) => {
+    try {
+      const update = req.body;
+      const MAX_TOKEN = process.env.MAX_BOT_TOKEN || "";
+
+      // Отвечаем 200 сразу
+      res.json({ ok: true });
+
+      if (!update || !MAX_TOKEN) return;
+
+      const updateType = update.update_type;
+
+      // Когда пользователь нажал /start или написал боту впервые
+      if (updateType === "bot_started" || updateType === "message_created") {
+        const chatId = update.chat_id ||
+          update.message?.recipient?.chat_id ||
+          update.user?.user_id;
+
+        if (!chatId) return;
+
+        const text = updateType === "message_created"
+          ? (update.message?.body?.text || "")
+          : "";
+
+        // Реагируем на /start или первый запуск
+        if (updateType === "bot_started" || text.startsWith("/start")) {
+          await fetch(`https://botapi.max.ru/messages?chat_id=${chatId}`, {
+            method: "POST",
+            headers: {
+              "Authorization": MAX_TOKEN,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              text: "🐾 Добро пожаловать в ПоводОК!\n\nПлатформа для помощи бездомным животным. Нажмите кнопку ниже чтобы открыть приложение.",
+              attachments: [{
+                type: "inline_keyboard",
+                payload: {
+                  buttons: [[{
+                    type: "url",
+                    text: "🐾 Открыть ПоводОК",
+                    url: "https://povodok.pro"
+                  }]]
+                }
+              }]
+            })
+          }).catch(() => {});
+        }
+
+        secLog("MAX_MESSAGE", String(chatId), "SUCCESS", `type=${updateType}`);
+      }
+    } catch (e) {
+      // silent
+    }
+  });
+
   // Security log (последние 500 событий)
   app.get("/api/security/log", (req, res) => {
     try {
