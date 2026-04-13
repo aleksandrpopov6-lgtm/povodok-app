@@ -176,6 +176,37 @@ export function registerRoutes(httpServer: Server, app: Express) {
     } catch { res.json([]); }
   });
 
+  /* ── Image proxy (для MAX и других WebView) ─────────────────── */
+  app.get("/api/proxy-image", async (req, res) => {
+    const { url } = req.query as { url?: string };
+    if (!url) return res.status(400).json({ error: "url required" });
+
+    // Разрешаем только доверенные источники
+    const allowed = ["images.unsplash.com", "placekitten.com", "povodok.pro"];
+    let hostname = "";
+    try { hostname = new URL(url).hostname; } catch { return res.status(400).json({ error: "bad url" }); }
+    if (!allowed.some(d => hostname.endsWith(d))) {
+      return res.status(403).json({ error: "domain not allowed" });
+    }
+
+    try {
+      const resp = await fetch(url, {
+        headers: { "User-Agent": "PovodokBot/1.0" },
+      });
+      if (!resp.ok) return res.status(resp.status).end();
+
+      const contentType = resp.headers.get("content-type") || "image/jpeg";
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      res.setHeader("Access-Control-Allow-Origin", "*");
+
+      const buf = await resp.arrayBuffer();
+      res.send(Buffer.from(buf));
+    } catch {
+      res.status(502).json({ error: "fetch failed" });
+    }
+  });
+
   app.get("/api/animals", (req, res) => res.json(storage.getAnimals(req.query.status as string)));
   app.get("/api/animals/:id", (req, res) => {
     const a = storage.getAnimal(Number(req.params.id));
