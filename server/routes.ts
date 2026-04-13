@@ -177,34 +177,31 @@ export function registerRoutes(httpServer: Server, app: Express) {
   });
 
   /* ── Image proxy (для MAX и других WebView) ─────────────────── */
-  app.get("/api/proxy-image", async (req, res) => {
+  app.get("/api/proxy-image", (req, res) => {
     const { url } = req.query as { url?: string };
     if (!url) return res.status(400).json({ error: "url required" });
 
-    // Разрешаем только доверенные источники
-    const allowed = ["images.unsplash.com", "placekitten.com", "povodok.pro"];
-    let hostname = "";
-    try { hostname = new URL(url).hostname; } catch { return res.status(400).json({ error: "bad url" }); }
-    if (!allowed.some(d => hostname.endsWith(d))) {
+    const allowed = ["images.unsplash.com", "placekitten.com", "povodok.pro", "unsplash.com"];
+    let parsedUrl: URL;
+    try { parsedUrl = new URL(url); } catch { return res.status(400).json({ error: "bad url" }); }
+    if (!allowed.some(d => parsedUrl.hostname.endsWith(d))) {
       return res.status(403).json({ error: "domain not allowed" });
     }
 
-    try {
-      const resp = await fetch(url, {
-        headers: { "User-Agent": "PovodokBot/1.0" },
-      });
-      if (!resp.ok) return res.status(resp.status).end();
+    const https = require("https");
+    const http = require("http");
+    const lib = parsedUrl.protocol === "https:" ? https : http;
 
-      const contentType = resp.headers.get("content-type") || "image/jpeg";
-      res.setHeader("Content-Type", contentType);
+    lib.get(url, { headers: { "User-Agent": "Mozilla/5.0 PovodokProxy/1.0" } }, (imgRes: any) => {
+      if (imgRes.statusCode !== 200) {
+        res.status(imgRes.statusCode || 502).end();
+        return;
+      }
+      res.setHeader("Content-Type", imgRes.headers["content-type"] || "image/jpeg");
       res.setHeader("Cache-Control", "public, max-age=86400");
       res.setHeader("Access-Control-Allow-Origin", "*");
-
-      const buf = await resp.arrayBuffer();
-      res.send(Buffer.from(buf));
-    } catch {
-      res.status(502).json({ error: "fetch failed" });
-    }
+      imgRes.pipe(res);
+    }).on("error", () => res.status(502).end());
   });
 
   app.get("/api/animals", (req, res) => res.json(storage.getAnimals(req.query.status as string)));
