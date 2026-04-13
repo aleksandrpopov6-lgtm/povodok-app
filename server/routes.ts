@@ -3,7 +3,18 @@ import type { Server } from "http";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import bcrypt from "bcrypt";
+import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
+
+/* ── Security audit log ──────────────────────────────────────────── */
+const SEC_LOG = path.join(process.cwd(), "security.log");
+const BCRYPT_ROUNDS = 12;
+
+function secLog(event: string, subject: string, result: "SUCCESS"|"FAILURE", details = "") {
+  const line = JSON.stringify({ ts: new Date().toISOString(), event, subject, result, details }) + "\n";
+  try { fs.appendFileSync(SEC_LOG, line); } catch {}
+}
 import {
   insertAnimalSchema, insertCatcherSchema, insertBoardingSchema,
   insertClinicSchema, insertVolunteerAdSchema, insertCatchRequestSchema,
@@ -30,6 +41,17 @@ function filesUrl(files: { [f: string]: Express.Multer.File[] } | undefined, key
 }
 
 export function registerRoutes(httpServer: Server, app: Express) {
+  // Rate limiting
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, max: 10,
+    message: { error: "Слишком много попыток. Попробуйте через 15 минут." },
+  });
+  const apiLimiter = rateLimit({
+    windowMs: 60 * 1000, max: 300,
+    message: { error: "Слишком много запросов." },
+  });
+  app.use("/api/auth", authLimiter);
+  app.use("/api", apiLimiter);
   // ── AUTH / USERS ──────────────────────────────────────────────────────────
   app.post("/api/auth/register", async (req, res) => {
     try {
@@ -38,7 +60,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
       const existing = storage.getUserByPhone(phone);
       if (existing) return res.status(409).json({ error: "Пользователь с таким телефоном уже зарегистрирован" });
       const user = storage.createUser({
-        name, phone, passwordHash: password, role: role || "guest",
+        name, phone, passwordHash: await bcrypt.hash(password, BCRYPT_ROUNDS), role: role || "guest",
         city: req.body.city || "Москва",
         isSubscribed: false, createdAt: new Date().toISOString(),
       });
@@ -47,10 +69,15 @@ export function registerRoutes(httpServer: Server, app: Express) {
     } catch (e: any) { res.status(400).json({ error: e.message }); }
   });
 
-  app.post("/api/auth/login", (req, res) => {
+  app.post("/api/auth/login", async (req, res) => {
     const { phone, password } = req.body;
     const user = storage.getUserByPhone(phone);
-    if (!user || user.passwordHash !== password) return res.status(401).json({ error: "Неверный телефон или пароль" });
+    const isValid = user ? await bcrypt.compare(password, user.passwordHash) : false;
+    if (!user || !isValid) {
+      secLog("LOGIN", phone || "unknown", "FAILURE", "Wrong credentials");
+      return res.status(401).json({ error: "Неверный телефон или пароль" });
+    }
+    secLog("LOGIN", phone, "SUCCESS");
     const { passwordHash: _, ...safeUser } = user;
     res.json(safeUser);
   });
@@ -81,6 +108,18 @@ export function registerRoutes(httpServer: Server, app: Express) {
   });
 
   // ── ANIMALS ───────────────────────────────────────────────────────────────
+  // Security log (последние 500 событий)
+  app.get("/api/security/log", (req, res) => {
+    try {
+      if (!fs.existsSync(SEC_LOG)) return res.json([]);
+      const lines = fs.readFileSync(SEC_LOG, "utf8").trim().split("\n")
+        .filter(Boolean).slice(-500)
+        .map(l => { try { return JSON.parse(l); } catch { return null; } })
+        .filter(Boolean).reverse();
+      res.json(lines);
+    } catch { res.json([]); }
+  });
+
   app.get("/api/animals", (req, res) => res.json(storage.getAnimals(req.query.status as string)));
   app.get("/api/animals/:id", (req, res) => {
     const a = storage.getAnimal(Number(req.params.id));
@@ -295,7 +334,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
     try {
       const { chatId, message } = req.body;
       if (!chatId || !message) return res.status(400).json({ error: "chatId and message required" });
-      const TOKEN = "8672654565:AAF0beZ2x-Dhj2cqqwC-LSBfLAjs-DG-4WQ";
+      const TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
       const resp = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

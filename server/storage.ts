@@ -215,9 +215,9 @@ const catcherCount = (sqlite.prepare("SELECT COUNT(*) as c FROM catchers").get()
 if (catcherCount === 0) {
   sqlite.exec(`
     INSERT INTO users (name,phone,password_hash,role,city,is_subscribed,created_at) VALUES
-    ('Андрей Ловцов','+79161234567','demo','catcher','Москва',0,'2026-01-01'),
-    ('Сергей Профи','+79031112233','demo','catcher','Москва',0,'2026-01-15'),
-    ('Наталья Кошкина','+79265554433','demo','catcher','Москва',0,'2026-02-01');
+    ('Андрей Ловцов','+79161234567','$2b$12$LQv3c1yqBwEHxv1LUUoTle.4p6GqbxKe/LGX/vSZBqLR2ZOoUqJLO','catcher','Москва',0,'2026-01-01'),
+    ('Сергей Профи','+79031112233','$2b$12$LQv3c1yqBwEHxv1LUUoTle.4p6GqbxKe/LGX/vSZBqLR2ZOoUqJLO','catcher','Москва',0,'2026-01-15'),
+    ('Наталья Кошкина','+79265554433','$2b$12$LQv3c1yqBwEHxv1LUUoTle.4p6GqbxKe/LGX/vSZBqLR2ZOoUqJLO','catcher','Москва',0,'2026-02-01');
     INSERT INTO catchers (user_id,name,phone,photo_url,description,metro,service_area,service_radius_km,price_in_mkad,works_cats,works_dogs,has_net,has_trap,has_cat_trap,experience,rating,review_count,is_active,created_at) VALUES
     (1,'Андрей Ловцов','+79161234567','https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400','Профессиональный отлов кошек и собак. Работаю тихо, без стресса для животного. Все виды оборудования.','Выхино','Москва, Выхино',7,0,1,1,1,1,1,'7 лет',4.9,23,1,'2026-01-01'),
     (2,'Сергей Профи','+79031112233','https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400','Специализируюсь на диких/агрессивных животных. Опыт работы с ТСН и муниципалитетами.','Тушинская','Москва, Тушинская',10,0,1,1,1,1,0,'10 лет',5.0,41,1,'2026-01-15'),
@@ -248,7 +248,7 @@ const adCount = (sqlite.prepare("SELECT COUNT(*) as c FROM volunteer_ads").get()
 if (adCount === 0) {
   sqlite.exec(`
     INSERT INTO users (name,phone,password_hash,role,city,is_subscribed,created_at) VALUES
-    ('Виолета','+79990001122','demo','volunteer','Москва',1,'2026-01-01');
+    ('Виолета','+79990001122','$2b$12$LQv3c1yqBwEHxv1LUUoTle.4p6GqbxKe/LGX/vSZBqLR2ZOoUqJLO','volunteer','Москва',1,'2026-01-01');
     INSERT INTO volunteer_ads (user_id,author_name,author_phone,title,animal_name,animal_type,animal_age,description,photo_url,ad_type,donation_needed,donation_collected,bank_card,sbp_phone,location,status,created_at) VALUES
     (4,'Виолета','+79990001122','Котёнок Персик ищет дом','Персик','cat','котёнок','Подобрала на улице, уже привит, здоров.','https://images.unsplash.com/photo-1533738363-b7f9aef128ce?w=600','rehome',NULL,0,NULL,'+79990001122','Москва, Тёплый Стан','active','2026-03-10'),
     (4,'Виолета','+79990001122','Собираем на операцию Барону','Барон','dog','взрослый','Дворняга попал под машину. Нужна операция на лапу — 18 000₽.','https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=600','treatment',18000,7400,'2200 7010 1234 5678','+79990001122','Москва, Бирюлёво','active','2026-03-20');

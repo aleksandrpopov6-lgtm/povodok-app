@@ -318,52 +318,115 @@ function SubscriptionModal({
    Support Project Card
 ───────────────────────────────────────────────────────────────── */
 function SupportProjectCard() {
-  const [selectedPlan, setSelectedPlan] = useState<number | null>(null);
+  const [amount, setAmount] = useState<string>("");
+  const [showPay, setShowPay] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
 
-  const plans = [
-    { name: "Базовый", price: 99 },
-    { name: "Стандарт", price: 299 },
-    { name: "Премиум", price: 599 },
+  const numAmount = Number(amount) || 0;
+
+  const copy = (text: string, key: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(key);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  };
+
+  const banks = [
+    { icon: "💚", name: "Сбербанк",       card: "2202208453295025", color: "#21A038" },
+    { icon: "🟡", name: "Тинькофф",       card: "2200700723959861", color: "#FFDD2D" },
+    { icon: "🔵", name: "ВТБ",            card: "2200240283693634", color: "#0066CC" },
   ];
 
   return (
     <div className="rounded-xl p-4 space-y-3" style={{ background: "hsl(var(--primary) / 0.08)", border: "2px solid hsl(var(--primary) / 0.3)" }}>
       <div>
-        <h3 className="font-black text-base" style={{ color: "hsl(var(--foreground))" }}>Поддержать ПоводОК</h3>
+        <h3 className="font-black text-base" style={{ color: "hsl(var(--foreground))" }}>🐾 Поддержать ПоводОК</h3>
         <p className="text-xs mt-1" style={{ color: "hsl(var(--muted-foreground))" }}>
-          Ваша подписка помогает развивать платформу и спасать больше животных
+          Любая сумма помогает развивать платформу и спасать больше животных
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        {plans.map(plan => (
-          <button
-            key={plan.price}
-            onClick={() => setSelectedPlan(plan.price === selectedPlan ? null : plan.price)}
-            className="flex flex-col items-center gap-1 py-3 rounded-xl border-2 transition-all text-center"
-            style={{
-              borderColor: selectedPlan === plan.price ? "hsl(var(--primary))" : "hsl(var(--border))",
-              background: selectedPlan === plan.price ? "hsl(var(--primary) / 0.15)" : "hsl(var(--card))",
-            }}
-            data-testid={`btn-support-${plan.price}`}
-          >
-            <span className="text-xs font-bold" style={{ color: "hsl(var(--muted-foreground))" }}>{plan.name}</span>
-            <span className="font-black text-base gradient-primary-text">{plan.price}₽</span>
-            <span className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>/мес</span>
-          </button>
-        ))}
+      {/* Сумма */}
+      <div>
+        <label className="text-xs font-semibold block mb-1" style={{ color: "hsl(var(--muted-foreground))" }}>
+          Сумма пожертвования (₽)
+        </label>
+        <input
+          type="number"
+          min={1}
+          value={amount}
+          onChange={e => setAmount(e.target.value)}
+          className="glass-input text-base font-bold"
+          placeholder="Введите любую сумму"
+          data-testid="input-support-amount"
+        />
       </div>
 
-      {selectedPlan && (
-        <div className="rounded-xl p-3 space-y-2" style={{ background: "hsl(var(--secondary))", border: "1px solid hsl(var(--border))" }}>
-          <p className="text-sm font-bold" style={{ color: "hsl(var(--foreground))" }}>
-            Переведите {selectedPlan}₽ на +79296146024
+      {/* Кнопка */}
+      <button
+        onClick={() => { if (numAmount > 0) setShowPay(v => !v); }}
+        disabled={numAmount <= 0}
+        className="w-full gradient-primary text-white font-black py-3 rounded-xl text-sm disabled:opacity-40"
+        data-testid="btn-support-pay"
+      >
+        Поддержать {numAmount > 0 ? `— ${numAmount}₽` : ""}
+      </button>
+
+      {/* Реквизиты */}
+      {showPay && numAmount > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-center" style={{ color: "hsl(var(--muted-foreground))" }}>
+            Переведите {numAmount}₽ на карту фаундора
           </p>
-          <p className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>
-            Сбер / ТКофф / ВТБ — Воробьёва Виолетта Игоревна
+          <p className="text-xs font-semibold text-center" style={{ color: "hsl(var(--foreground))" }}>
+            Воробьёва Виолетта Игоревна
           </p>
-          <p className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>
-            После перевода пришлите чек в @Povodokpro_bot
+
+          {/* СБП по номеру */}
+          <div className="rounded-xl p-3 space-y-1" style={{ background: "hsl(var(--secondary))", border: "1px solid hsl(var(--border))" }}>
+            <p className="text-xs font-bold" style={{ color: "hsl(var(--muted-foreground))" }}>📲 СБП по номеру телефона</p>
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-sm font-bold" style={{ color: "hsl(var(--foreground))" }}>+7 929 614 60 24</span>
+              <button
+                onClick={() => copy("+79296146024", "phone")}
+                className="text-xs font-bold px-2 py-1 rounded-lg"
+                style={{ background: "hsl(var(--primary) / 0.15)", color: "hsl(var(--primary))" }}
+              >
+                {copied === "phone" ? "✓" : "Копировать"}
+              </button>
+            </div>
+            <p className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>Сбер · Тинькофф · ВТБ · Яндекс Банк</p>
+          </div>
+
+          {/* Карты банков */}
+          <div className="space-y-2">
+            {banks.map(b => (
+              <div key={b.name} className="rounded-xl p-3" style={{ background: "hsl(var(--secondary))", border: "1px solid hsl(var(--border))" }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span>{b.icon}</span>
+                    <div>
+                      <p className="text-xs font-bold" style={{ color: "hsl(var(--foreground))" }}>{b.name}</p>
+                      <p className="font-mono text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>
+                        {b.card.replace(/(.{4})/g, "$1 ").trim()}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => copy(b.card, b.name)}
+                    className="text-xs font-bold px-2 py-1 rounded-lg flex-shrink-0"
+                    style={{ background: "hsl(var(--primary) / 0.15)", color: "hsl(var(--primary))" }}
+                  >
+                    {copied === b.name ? "✓" : "Копировать"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-xs text-center" style={{ color: "hsl(var(--muted-foreground))" }}>
+            После перевода пришлите чек в{" "}
+            <span style={{ color: "hsl(var(--primary))", fontWeight: 700 }}>@Povodokpro_bot</span>
           </p>
         </div>
       )}
@@ -602,7 +665,18 @@ export default function ProfilePage() {
                 data-testid="input-price-out-mkad"
               />
             </div>
-            <p className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>Оставьте 0 чтобы работать бесплатно</p>
+            <div className="rounded-xl p-3 space-y-1" style={{ background: "hsl(var(--secondary))", border: "1px solid hsl(var(--border))" }}>
+              <p className="text-xs font-bold" style={{ color: "hsl(var(--foreground))" }}>📋 Тарифы</p>
+              <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>
+                <span className="text-green-500">✓</span>
+                <span><strong style={{ color: "hsl(var(--foreground))" }}>Бесплатно</strong> — 3 заявки в месяц</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>
+                <span style={{ color: "hsl(var(--primary))" }}>★</span>
+                <span><strong style={{ color: "hsl(var(--primary))" }}>Платный режим</strong> — от 300₽, безлимитные заявки</span>
+              </div>
+              <p className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>Цена 0₽ = работаете бесплатно (лимит 3 заявки)</p>
+            </div>
             <button
               onClick={() => savePricesMutation.mutate()}
               disabled={savePricesMutation.isPending}
@@ -640,111 +714,6 @@ export default function ProfilePage() {
             )}
           </div>
         )}
-
-        {/* ── SUBSCRIPTION / TARIFF SECTION ── */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-base font-black" style={{ color: "hsl(var(--foreground))" }}>Тариф размещения</h3>
-            {user.isSubscribed && (
-              <button
-                onClick={() => setShowChangePlan(v => !v)}
-                className="flex items-center gap-1 text-xs font-bold"
-                style={{ color: "hsl(var(--primary))" }}
-              >
-                Изменить {showChangePlan ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
-            )}
-          </div>
-
-          {user.isSubscribed && !showChangePlan ? (
-            /* Active subscription banner */
-            <div className="rounded-xl p-4 flex items-center gap-3"
-              style={{ background: "hsl(142 60% 42% / 0.12)", border: "1px solid hsl(142 60% 42% / 0.3)" }}>
-              <CheckCircle size={24} className="text-green-500 flex-shrink-0" />
-              <div>
-                <p className="font-bold text-green-500">Платное размещение активно</p>
-                <p className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>Все функции платформы доступны</p>
-              </div>
-            </div>
-          ) : (
-            /* Plan cards — same as registration screen */
-            <div className="space-y-3">
-              {/* FREE */}
-              <div className="rounded-xl p-4" style={{ background: "hsl(var(--secondary))", border: "1px solid hsl(var(--border))" }}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-black" style={{ color: "hsl(var(--foreground))" }}>Бесплатно</p>
-                    <p className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>Базовое размещение</p>
-                  </div>
-                  <span className="font-black text-lg" style={{ color: "hsl(var(--foreground))" }}>0₽</span>
-                </div>
-                <ul className="mt-2 space-y-1">
-                  {["Профиль в каталоге", "До 3 объявлений в месяц", "Базовые фильтры"].map(f => (
-                    <li key={f} className="flex items-center gap-2 text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>
-                      <CheckCircle size={12} className="text-green-500" />{f}
-                    </li>
-                  ))}
-                </ul>
-                {user.isSubscribed && (
-                  <button className="w-full mt-3 py-2 rounded-xl text-sm font-bold"
-                    style={{ background: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
-                    Перейти на бесплатный
-                  </button>
-                )}
-              </div>
-
-              {/* PAID */}
-              <div className="rounded-xl p-4 relative"
-                style={{ background: "hsl(var(--primary) / 0.08)", border: "2px solid hsl(var(--primary))" }}>
-                <div className="absolute -top-3 left-4 gradient-primary text-white text-xs font-black px-3 py-0.5 rounded-full">
-                  Популярный
-                </div>
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-black" style={{ color: "hsl(var(--foreground))" }}>Платное</p>
-                    <p className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>Приоритет в поиске + расширенный профиль</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-black text-lg gradient-primary-text">от {selectedAmount}₽</span>
-                    <span className="text-xs block" style={{ color: "hsl(var(--muted-foreground))" }}>/мес</span>
-                  </div>
-                </div>
-
-                {/* Amount input */}
-                <div className="mb-3">
-                  <label className="text-xs font-semibold block mb-1" style={{ color: "hsl(var(--muted-foreground))" }}>
-                    Сумма в месяц (от 300₽)
-                  </label>
-                  <input
-                    type="number"
-                    min={300}
-                    value={selectedAmount}
-                    onChange={e => setSelectedAmount(Math.max(300, Number(e.target.value)))}
-                    className="glass-input text-base font-bold"
-                    data-testid="input-subscription-amount"
-                  />
-                </div>
-
-                <ul className="mb-3 space-y-1">
-                  {["Приоритет в поиске", "Расширенный профиль", "До 10 фото", "Значок «Проверено»"].map(f => (
-                    <li key={f} className="flex items-center gap-2 text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>
-                      <CheckCircle size={12} className="text-green-500" />{f}
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  onClick={() => setShowPayModal(true)}
-                  className="w-full gradient-primary text-white font-black py-3 rounded-xl text-sm"
-                  data-testid="button-subscribe"
-                >
-                  {user.isSubscribed ? "Изменить тариф" : "Подключить"}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* ── SUPPORT PROJECT SECTION ── */}
         <SupportProjectCard />
 

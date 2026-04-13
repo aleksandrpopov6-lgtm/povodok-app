@@ -97,7 +97,8 @@ function CreateAdForm({ onBack }: { onBack: () => void }) {
     location: "",
   });
 
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const MAX_PHOTOS = 3;
 
   const mutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/volunteer-ads", data),
@@ -109,11 +110,16 @@ function CreateAdForm({ onBack }: { onBack: () => void }) {
   });
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setPhotoPreview(url);
-    }
+    const files = Array.from(e.target.files || []);
+    const remaining = MAX_PHOTOS - photoPreviews.length;
+    const toAdd = files.slice(0, remaining);
+    const urls = toAdd.map(f => URL.createObjectURL(f));
+    setPhotoPreviews(prev => [...prev, ...urls]);
+    e.target.value = ""; // reset input so same file can be re-added
+  };
+
+  const removePhoto = (idx: number) => {
+    setPhotoPreviews(prev => prev.filter((_, i) => i !== idx));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -131,7 +137,7 @@ function CreateAdForm({ onBack }: { onBack: () => void }) {
       animalType: form.animalType,
       animalAge: form.animalAge,
       description: form.description,
-      photoUrl: photoPreview || "https://placekitten.com/400/400",
+      photoUrl: photoPreviews[0] || "https://placekitten.com/400/400",
       adType: form.adType,
       location: form.location,
       donationNeeded: null,
@@ -208,24 +214,57 @@ function CreateAdForm({ onBack }: { onBack: () => void }) {
       </div>
 
       <form onSubmit={handleSubmit} className="px-4 pt-4 space-y-4 pb-8">
-        {/* Photo upload */}
-        <div>
-          <label className="photo-upload-box aspect-video w-full relative cursor-pointer" data-testid="photo-upload">
-            <input
-              type="file"
-              accept="image/*"
-              className="absolute inset-0 opacity-0 cursor-pointer"
-              onChange={handlePhotoChange}
-            />
-            {photoPreview ? (
-              <img src={photoPreview} alt="preview" className="w-full h-full object-cover rounded-xl" />
-            ) : (
-              <>
-                <ImagePlus size={32} className="text-muted-foreground" />
-                <span className="text-sm text-muted-foreground font-semibold">Добавить фото</span>
-              </>
+        {/* Photo upload — до 3 фото */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold" style={{color:"hsl(var(--muted-foreground))"}}>
+              Фото ({photoPreviews.length}/{MAX_PHOTOS})
+            </span>
+            {photoPreviews.length > 0 && photoPreviews.length < MAX_PHOTOS && (
+              <span className="text-xs" style={{color:"hsl(var(--muted-foreground))"}}>
+                Можно добавить ещё {MAX_PHOTOS - photoPreviews.length}
+              </span>
             )}
-          </label>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            {/* Превью загруженных фото */}
+            {photoPreviews.map((src, idx) => (
+              <div key={idx} className="relative aspect-square rounded-xl overflow-hidden" style={{background:"hsl(var(--secondary))"}}>
+                <img src={src} alt={`фото ${idx+1}`} className="w-full h-full object-cover"/>
+                <button
+                  type="button"
+                  onClick={() => removePhoto(idx)}
+                  className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-white"
+                  style={{background:"rgba(0,0,0,0.6)", fontSize:"0.65rem", fontWeight:700}}
+                >✕</button>
+                {idx === 0 && (
+                  <div className="absolute bottom-1 left-1 text-white rounded px-1" style={{background:"rgba(0,0,0,0.5)", fontSize:"0.55rem", fontWeight:700}}>главное</div>
+                )}
+              </div>
+            ))}
+
+            {/* Кнопка добавить фото (если меньше 3) */}
+            {photoPreviews.length < MAX_PHOTOS && (
+              <label
+                className="aspect-square rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer border-2 border-dashed"
+                style={{borderColor:"hsl(var(--border))", background:"hsl(var(--secondary))"}}
+                data-testid="photo-upload"
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                />
+                <ImagePlus size={20} className="text-muted-foreground"/>
+                <span className="text-xs font-semibold text-muted-foreground">
+                  {photoPreviews.length === 0 ? "Добавить фото" : "Ещё фото"}
+                </span>
+              </label>
+            )}
+          </div>
         </div>
 
         <input
