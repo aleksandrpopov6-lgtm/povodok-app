@@ -200,6 +200,7 @@ function AddAnimalForm({ onClose }: { onClose: () => void }) {
       location: form.location, description: form.description,
       story: form.story || null,
       photoUrl: photos[0] || "https://placekitten.com/400/400",
+      videoUrl: (form as any).videoUrl || null,
       status: "needs_help",
       needsFood: form.needsFood, needsShelter: form.needsShelter,
       needsMedical: form.needsMedical, needsHome: form.needsHome,
@@ -291,6 +292,27 @@ function AddAnimalForm({ onClose }: { onClose: () => void }) {
         <div>
           <label style={labelStyle}>Описание *</label>
           <textarea style={{ ...inputStyle, minHeight: "80px", resize: "vertical" }} placeholder="Характер, особенности..." value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} required />
+        </div>
+
+        {/* Видео — только RuTube или VK */}
+        <div>
+          <label style={labelStyle}>Ссылка на видео (необязательно)</label>
+          <input
+            style={inputStyle}
+            placeholder="rutube.ru/video/... или vk.com/video..."
+            value={(form as any).videoUrl || ""}
+            onChange={e => {
+              const val = e.target.value.trim();
+              if (val && !/rutube\.ru|vk\.com\/video/i.test(val)) {
+                // не задаём — ждём пока не введут правильный
+                return;
+              }
+              setForm(f => ({ ...f, videoUrl: val } as any));
+            }}
+          />
+          <p style={{ fontSize: "0.68rem", color: "hsl(var(--muted-foreground))", marginTop: "0.3rem" }}>
+            ⚠️ Принимаем только <strong>RuTube</strong> (rutube.ru) и <strong>ВКонтакте</strong> (vk.com/video). YouTube и другие сервисы не поддерживаются.
+          </p>
         </div>
 
         {/* Нужды */}
