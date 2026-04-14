@@ -175,6 +175,7 @@ export const animals = sqliteTable("animals", {
   story: text("story").notNull(),
   photoUrl: text("photo_url").notNull(),
   videoUrl: text("video_url"),
+  photos: text("photos"), // JSON array of up to 3 photo URLs — nullable, обратно совместимо
   status: text("status").notNull().default("needs_help"),
   needsFood: integer("needs_food", { mode: "boolean" }).notNull().default(true),
   needsShelter: integer("needs_shelter", { mode: "boolean" }).notNull().default(false),

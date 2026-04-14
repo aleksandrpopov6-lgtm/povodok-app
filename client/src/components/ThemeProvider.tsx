@@ -5,6 +5,7 @@ declare global {
   interface Window {
     Telegram?: {
       WebApp?: {
+        initData?: string;
         initDataUnsafe?: {
           user?: {
             id: number;
@@ -14,6 +15,7 @@ declare global {
             photo_url?: string;
           };
         };
+        colorScheme?: "dark" | "light";
         ready?: () => void;
         expand?: () => void;
       };
@@ -25,7 +27,24 @@ declare global {
 const ThemeCtx = createContext<{ theme: string; toggle: () => void }>({ theme: "dark", toggle: () => {} });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    // 1. localStorage (приоритет 1)
+    try {
+      const saved = localStorage.getItem("povodok_theme");
+      if (saved === "dark" || saved === "light") return saved;
+    } catch {}
+    
+    // 2. Telegram colorScheme (приоритет 2)
+    const tgScheme = window.Telegram?.WebApp?.colorScheme;
+    if (tgScheme === "dark" || tgScheme === "light") return tgScheme;
+    
+    // 3. prefers-color-scheme (приоритет 3)
+    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: light)").matches) {
+      return "light";
+    }
+    
+    return "dark"; // default
+  });
 
   useEffect(() => {
     const root = document.documentElement;
@@ -33,7 +52,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.classList.add(theme);
   }, [theme]);
 
-  const toggle = () => setTheme(t => t === "dark" ? "light" : "dark");
+  const toggle = () => setTheme(t => {
+    const next = t === "dark" ? "light" : "dark";
+    try { localStorage.setItem("povodok_theme", next); } catch {}
+    return next;
+  });
 
   return (
     <ThemeCtx.Provider value={{ theme, toggle }}>

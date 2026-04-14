@@ -217,6 +217,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
         ...req.body,
         photoUrl: filesUrl(files, "photo") || req.body.photoUrl,
         videoUrl: filesUrl(files, "video") || null,
+        photos: req.body.photos || null,
         needsFood: req.body.needsFood === "true", needsShelter: req.body.needsShelter === "true",
         needsMedical: req.body.needsMedical === "true", needsHome: req.body.needsHome === "true",
       });

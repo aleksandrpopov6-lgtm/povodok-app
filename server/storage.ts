@@ -42,6 +42,7 @@ sqlite.exec(`
     story TEXT NOT NULL,
     photo_url TEXT NOT NULL,
     video_url TEXT,
+    photos TEXT,
     status TEXT NOT NULL DEFAULT 'needs_help',
     needs_food INTEGER NOT NULL DEFAULT 1,
     needs_shelter INTEGER NOT NULL DEFAULT 0,

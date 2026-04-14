@@ -1,4 +1,5 @@
 import { Phone } from "lucide-react";
+import { usePlatform } from "@/hooks/usePlatform";
 
 /**
  * Кликабельный телефонный номер.
@@ -67,6 +68,62 @@ export function TelegramLink({
       rel="noopener noreferrer"
       className={className}
       style={{ textDecoration: "none" }}
+      onClick={e => e.stopPropagation()}
+    >
+      {label}
+    </a>
+  );
+}
+
+/**
+ * Platform-aware кнопка связи.
+ * Telegram → t.me ссылка
+ * MAX → max.ru ссылка (или deep link)
+ * НЕ ломает существующий TelegramLink
+ */
+export function ContactLink({
+  phone,
+  username,
+  maxUsername,
+  label = "Написать",
+  className = "",
+  style = {},
+}: {
+  phone: string;
+  username?: string;        // telegram @username
+  maxUsername?: string;     // MAX username (если есть)
+  label?: string;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const plat = usePlatform();
+  
+  let href: string;
+  
+  if (plat === "max") {
+    // MAX deep link
+    if (maxUsername) {
+      href = `https://max.ru/${maxUsername}`;
+    } else if (username) {
+      // Если нет MAX username — показываем телефон
+      href = `tel:${phone.replace(/[^\d+]/g, "")}`;
+    } else {
+      href = `tel:${phone.replace(/[^\d+]/g, "")}`;
+    }
+  } else {
+    // Telegram (default)
+    href = username
+      ? `https://t.me/${username.replace("@", "")}`
+      : `https://t.me/+${phone.replace(/[^\d]/g, "")}`;
+  }
+  
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={className}
+      style={{ textDecoration: "none", ...style }}
       onClick={e => e.stopPropagation()}
     >
       {label}

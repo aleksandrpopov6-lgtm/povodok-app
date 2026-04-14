@@ -5,7 +5,7 @@ import { useHashLocation } from "wouter/use-hash-location";
 import {
   ArrowLeft, Heart, Home as HomeIcon, Stethoscope,
   UtensilsCrossed, MapPin, CalendarDays,
-  CheckCircle, Play, Pause, Volume2, VolumeX,
+  CheckCircle,
   Navigation
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,61 +24,117 @@ const helpOptions = [
   { id: "medicine",icon: Stethoscope,     label: "Купить лекарства", desc: "Ветеринарная помощь",           color: "text-red-500",    needKey: "needsMedical" },
 ];
 
-/* ── Inline video player ───────────────────────────────── */
+/* ── Inline video player (VK/RuTube/YouTube/direct) ────────────── */
 function VideoPlayer({ src }: { src: string }) {
+  const getEmbedUrl = (url: string): { type: "iframe" | "video"; src: string } => {
+    // VK Video
+    const vkMatch = url.match(/vk\.com\/video(-?\d+)_(\d+)/);
+    if (vkMatch) {
+      return { type: "iframe", src: `https://vk.com/video_ext.php?oid=${vkMatch[1]}&id=${vkMatch[2]}&hd=2` };
+    }
+    // RuTube
+    const rtMatch = url.match(/rutube\.ru\/video\/([a-f0-9]+)/);
+    if (rtMatch) {
+      return { type: "iframe", src: `https://rutube.ru/play/embed/${rtMatch[1]}` };
+    }
+    // YouTube (fallback)
+    const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+    if (ytMatch) {
+      return { type: "iframe", src: `https://www.youtube.com/embed/${ytMatch[1]}` };
+    }
+    // Прямая ссылка на видеофайл
+    return { type: "video", src: url };
+  };
+
+  const { type, src: embedSrc } = getEmbedUrl(src);
+
+  if (type === "iframe") {
+    return (
+      <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden">
+        <iframe
+          src={embedSrc}
+          className="w-full h-full"
+          allowFullScreen
+          allow="autoplay; encrypted-media"
+          style={{ border: "none" }}
+        />
+      </div>
+    );
+  }
+
+  // Оригинальный video тег для прямых ссылок
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [progress, setProgress] = useState(0);
-
   const toggle = () => {
     const v = videoRef.current;
     if (!v) return;
     if (playing) { v.pause(); setPlaying(false); }
     else { v.play(); setPlaying(true); }
   };
-
-  const toggleMute = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const v = videoRef.current;
-    if (!v) return;
-    v.muted = !v.muted;
-    setMuted(v.muted);
-  };
-
   return (
     <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden cursor-pointer" onClick={toggle}>
-      <video
-        ref={videoRef}
-        src={src}
-        className="w-full h-full object-cover"
-        playsInline
-        loop
-        onTimeUpdate={() => {
-          const v = videoRef.current;
-          if (v) setProgress(v.duration ? (v.currentTime / v.duration) * 100 : 0);
-        }}
-        onEnded={() => setPlaying(false)}
-      />
+      <video ref={videoRef} src={embedSrc} className="w-full h-full object-cover" playsInline />
       {!playing && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-          <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-            <Play size={26} className="text-foreground ml-1" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+            <div style={{ borderLeft: "18px solid white", borderTop: "11px solid transparent", borderBottom: "11px solid transparent", marginLeft: 4 }} />
           </div>
         </div>
       )}
-      <button
-        className="absolute top-3 right-3 bg-black/40 backdrop-blur-sm p-1.5 rounded-full text-white"
-        onClick={toggleMute}
-        aria-label={muted ? "Включить звук" : "Выключить звук"}
-      >
-        {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
-      </button>
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-        <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
-      </div>
-      <div className="absolute top-3 left-3 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded-full text-white text-xs font-bold">
-        Видео
+    </div>
+  );
+}
+
+/* ── Photo gallery with swipe ────────────────────────────────── */
+function PhotoGallery({ photoUrl, photos, alt }: { photoUrl: string; photos?: string | null; alt: string }) {
+  const allPhotos = (() => {
+    if (photos) {
+      try {
+        const parsed = typeof photos === "string" ? JSON.parse(photos) : photos;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return [photoUrl];
+  })();
+
+  const [idx, setIdx] = useState(0);
+  const startX = useRef<number | null>(null);
+
+  if (allPhotos.length === 1) {
+    return <img src={allPhotos[0]} alt={alt} className="w-full aspect-[4/3] object-cover" />;
+  }
+
+  return (
+    <div
+      className="relative w-full aspect-[4/3] overflow-hidden select-none"
+      onTouchStart={e => { startX.current = e.touches[0].clientX; }}
+      onTouchEnd={e => {
+        if (startX.current === null) return;
+        const diff = startX.current - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 40) {
+          if (diff > 0) setIdx(i => Math.min(i + 1, allPhotos.length - 1));
+          else setIdx(i => Math.max(i - 1, 0));
+        }
+        startX.current = null;
+      }}
+    >
+      <img src={allPhotos[idx]} alt={alt} className="w-full h-full object-cover" />
+      {/* Dots */}
+      <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+        {allPhotos.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setIdx(i)}
+            className="rounded-full transition-all"
+            style={{
+              width: i === idx ? 18 : 6,
+              height: 6,
+              background: i === idx ? "#F0485C" : "rgba(255,255,255,0.6)",
+              border: "none",
+              padding: 0,
+            }}
+          />
+        ))}
       </div>
     </div>
   );
@@ -171,7 +227,7 @@ export default function AnimalPage() {
         )}
 
         {mediaTab === "photo" || !hasVideo ? (
-          <img src={animal.photoUrl} alt={animal.name} className="w-full aspect-[4/3] object-cover" />
+          <PhotoGallery photoUrl={animal.photoUrl} photos={(animal as any).photos} alt={animal.name} />
         ) : (
           <div className="w-full aspect-[4/3] bg-black flex items-center justify-center p-3">
             <VideoPlayer src={animal.videoUrl!} />

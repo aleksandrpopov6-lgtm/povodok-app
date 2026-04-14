@@ -43,6 +43,22 @@ function AppRoutes() {
         tgUser,
       });
     }
+    // MAX auto-login (если пришли из MAX)
+    if (!tgUser) {
+      import("@/hooks/usePlatform").then(({ platform: plat }) => {
+        if (plat === "max") {
+          setUser({
+            id: 0,
+            name: "Пользователь MAX",
+            phone: "",
+            role: "guest",
+            isSubscribed: false,
+            avatarUrl: null,
+          });
+        }
+      });
+    }
+
     // Expand TG WebApp
     try { window.Telegram?.WebApp?.expand?.(); } catch {}
     try { window.Telegram?.WebApp?.ready?.(); } catch {}
